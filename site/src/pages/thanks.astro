@@ -10,10 +10,20 @@ import { BUSINESS } from '../config';
       <span class="rounded-2xl bg-accent/15 p-4 text-accent-400"><Icon name="check" size={34} /></span>
       <h1 class="mt-6 font-display text-3xl font-semibold text-white md:text-4xl">Got it — you're on our desk</h1>
       <p class="mt-4 max-w-md text-[16px] leading-relaxed text-steel-400">{BUSINESS.replyPromise}. If it's urgent, call us at <a href={BUSINESS.phoneHref} class="font-semibold text-accent-400">{BUSINESS.phone}</a>.</p>
+      <div id="dl-card" class="mt-8 hidden w-full max-w-md rounded-2xl bg-white/[0.06] p-6 ring-1 ring-white/12">
+        <h2 class="font-display text-[17px] font-semibold text-white">Your checklist is ready</h2>
+        <p class="mt-1.5 text-[13.5px] text-steel-400">We've also emailed you a copy for later.</p>
+        <a href="/downloads/texas-financial-health-checklist.pdf" download class="btn-primary mt-4 w-full">Download the checklist (PDF)</a>
+      </div>
       <div class="mt-8 flex flex-col gap-3 sm:flex-row">
         <a href="/resources/" class="btn-primary">Browse our guides <Icon name="arrow-right" size={16} /></a>
         <a href="/" class="btn-ghost-dark">Back to home</a>
       </div>
+      <script>
+        if (new URLSearchParams(location.search).get('dl') === 'checklist') {
+          document.getElementById('dl-card')?.classList.remove('hidden');
+        }
+      </script>
     </div>
   </section>
 </Base>

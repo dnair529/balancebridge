@@ -73,7 +73,7 @@ export async function leadRoutes(app: FastifyInstance): Promise<void> {
           email,
           phone: str(body['phone'], 50),
           company: str(body['company'], 200),
-          businessType: str(body['business_type'], 100),
+          businessType: str(body['business_type'] ?? body['businessType'], 100),
           revenue: str(body['revenue'], 100),
           message: str(body['message'], 5000),
           ip: req.ip,
@@ -89,7 +89,9 @@ export async function leadRoutes(app: FastifyInstance): Promise<void> {
       if (accepts.includes('application/json')) {
         return reply.send({ ok: true });
       }
-      return reply.redirect(`${config.SITE_URL}/thanks/`, 303);
+      // Lead-magnet signups land on the thank-you page with the download unlocked.
+      const suffix = lead!.form === 'lead-magnet' ? '?dl=checklist' : '';
+      return reply.redirect(`${config.SITE_URL}/thanks/${suffix}`, 303);
     },
   );
 }
