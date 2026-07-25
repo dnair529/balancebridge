@@ -1,0 +1,15 @@
+<% layout('layout') %>
+<h1 class="auth-title">Set up your account</h1>
+<p class="auth-sub">You’re joining as <strong><%= it.email %></strong>.</p>
+<form method="post" action="/accept-invite/<%= it.token %>" class="stack">
+  <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+  <label class="field">
+    <span>Your name</span>
+    <input type="text" name="name" required autocomplete="name" autofocus>
+  </label>
+  <label class="field">
+    <span>Password (12+ characters)</span>
+    <input type="password" name="password" required minlength="12" autocomplete="new-password">
+  </label>
+  <button class="btn btn-primary btn-block" type="submit">Create account</button>
+</form>

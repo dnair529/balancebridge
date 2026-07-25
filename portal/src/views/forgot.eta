@@ -1,0 +1,12 @@
+<% layout('layout') %>
+<h1 class="auth-title">Forgot password</h1>
+<p class="auth-sub">Enter your email and we’ll send a reset link.</p>
+<form method="post" action="/forgot-password" class="stack">
+  <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+  <label class="field">
+    <span>Email</span>
+    <input type="email" name="email" required autocomplete="username" autofocus>
+  </label>
+  <button class="btn btn-primary btn-block" type="submit">Send reset link</button>
+</form>
+<p class="auth-links"><a href="/login">Back to sign in</a></p>

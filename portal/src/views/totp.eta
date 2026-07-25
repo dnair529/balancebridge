@@ -1,0 +1,12 @@
+<% layout('layout') %>
+<h1 class="auth-title">Two-step verification</h1>
+<p class="auth-sub">Enter the 6-digit code from your authenticator app.</p>
+<form method="post" action="/login/totp" class="stack">
+  <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+  <label class="field">
+    <span>Code</span>
+    <input type="text" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autocomplete="one-time-code" autofocus class="code-input">
+  </label>
+  <button class="btn btn-primary btn-block" type="submit">Verify</button>
+</form>
+<p class="auth-links"><a href="/login">Back to sign in</a></p>

@@ -1,0 +1,58 @@
+<% layout('../layout') %>
+<div class="page-head">
+  <p><a class="link" href="/admin">← Admin</a></p>
+  <h1>Invites</h1>
+  <p class="sub">Accounts are invite-only. Invites expire after 7 days.</p>
+</div>
+
+<section class="card">
+  <div class="card-head"><h2>Send an invite</h2></div>
+  <form method="post" action="/admin/invites" class="stack">
+    <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+    <div class="field-grid">
+      <label class="field"><span>Email *</span><input type="email" name="email" required></label>
+      <label class="field"><span>Role</span>
+        <select name="role">
+          <option value="client">Client</option>
+          <% if (it.user.role === 'admin') { %>
+            <option value="staff">Staff</option>
+            <option value="admin">Admin</option>
+          <% } %>
+        </select>
+      </label>
+      <label class="field"><span>Client (for client role)</span>
+        <select name="client_id">
+          <option value="">—</option>
+          <% it.clientRows.forEach(function (c) { %><option value="<%= c.id %>"><%= c.businessName %></option><% }) %>
+        </select>
+      </label>
+    </div>
+    <button class="btn btn-primary" type="submit">Send invite</button>
+  </form>
+</section>
+
+<section class="card">
+  <div class="card-head"><h2>Sent invites</h2></div>
+  <% if (it.inviteRows.length === 0) { %>
+    <p class="empty">No invites yet.</p>
+  <% } else { %>
+    <table class="table">
+      <thead><tr><th>Email</th><th>Role</th><th class="hide-sm">Client</th><th class="hide-sm">By</th><th>Status</th></tr></thead>
+      <tbody>
+        <% it.inviteRows.forEach(function (row) { %>
+        <tr>
+          <td class="strong"><%= row.invite.email %></td>
+          <td><span class="chip"><%= row.invite.role %></span></td>
+          <td class="hide-sm muted"><%= row.clientName || '—' %></td>
+          <td class="hide-sm muted"><%= row.inviterName %></td>
+          <td>
+            <% if (row.invite.acceptedAt) { %><span class="chip status-paid">accepted</span>
+            <% } else if (new Date(row.invite.expiresAt) < new Date()) { %><span class="chip status-void">expired</span>
+            <% } else { %><span class="chip status-open">pending</span><% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</section>

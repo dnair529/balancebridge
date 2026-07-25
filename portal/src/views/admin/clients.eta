@@ -1,0 +1,42 @@
+<% layout('../layout') %>
+<div class="page-head">
+  <p><a class="link" href="/admin">← Admin</a></p>
+  <h1>Clients</h1>
+</div>
+
+<section class="card">
+  <div class="card-head"><h2>Add a client</h2></div>
+  <form method="post" action="/admin/clients" class="stack">
+    <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+    <div class="field-grid">
+      <label class="field"><span>Business name *</span><input type="text" name="business_name" required></label>
+      <label class="field"><span>Contact name</span><input type="text" name="contact_name"></label>
+      <label class="field"><span>Email</span><input type="email" name="email"></label>
+      <label class="field"><span>Phone</span><input type="tel" name="phone"></label>
+      <label class="field"><span>Stripe customer ID</span><input type="text" name="stripe_customer_id" placeholder="cus_…"></label>
+    </div>
+    <label class="field"><span>Notes</span><textarea name="notes" rows="2" data-autosize></textarea></label>
+    <button class="btn btn-primary" type="submit">Add client</button>
+  </form>
+</section>
+
+<section class="card">
+  <% if (it.clientRows.length === 0) { %>
+    <p class="empty">No clients yet.</p>
+  <% } else { %>
+    <table class="table">
+      <thead><tr><th>Business</th><th class="hide-sm">Contact</th><th class="hide-sm">Email</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        <% it.clientRows.forEach(function (c) { %>
+        <tr>
+          <td class="strong"><a class="link" href="/admin/clients/<%= c.id %>"><%= c.businessName %></a></td>
+          <td class="hide-sm"><%= c.contactName || '—' %></td>
+          <td class="hide-sm muted"><%= c.email || '—' %></td>
+          <td><span class="chip status-<%= c.status %>"><%= c.status %></span></td>
+          <td class="row-actions"><a class="btn btn-ghost btn-sm" href="/admin/clients/<%= c.id %>">Open</a></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</section>

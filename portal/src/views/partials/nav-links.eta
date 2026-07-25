@@ -1,0 +1,26 @@
+<%
+  const staff = it.user && (it.user.role === 'staff' || it.user.role === 'admin');
+  const q = (!it.user || it.user.role === 'client') ? '' :
+    (it.query && it.query.client ? '?client=' + it.query.client : '');
+  const items = [
+    ['/dashboard', 'Dashboard', 'M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10'],
+    ['/documents', 'Documents', 'M6 2h8l4 4v16H6zM14 2v5h5'],
+    ['/messages', 'Messages', 'M4 5h16v11H8l-4 4z'],
+    ['/tasks', 'Tasks', 'M4 6h2v2H4zM9 7h11M4 11h2v2H4zM9 12h11M4 16h2v2H4zM9 17h11'],
+    ['/billing', 'Billing', 'M3 6h18v12H3zM3 10h18'],
+    ['/signatures', 'Signatures', 'M3 17c3 0 3-8 6-8s2 10 5 10 2-6 7-6M3 21h18'],
+    ['/settings', 'Settings', 'M12 8a4 4 0 100 8 4 4 0 000-8zM12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1'],
+  ];
+%>
+<% items.forEach(function (item) { %>
+  <a class="nav-link<%= it.path === item[0] || (it.path || '').startsWith(item[0] + '/') ? ' active' : '' %>" href="<%= item[0] + q %>">
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="<%= item[2] %>"/></svg>
+    <span><%= item[1] %></span>
+  </a>
+<% }) %>
+<% if (staff) { %>
+  <a class="nav-link nav-admin<%= (it.path || '').startsWith('/admin') ? ' active' : '' %>" href="/admin">
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg>
+    <span>Admin</span>
+  </a>
+<% } %>

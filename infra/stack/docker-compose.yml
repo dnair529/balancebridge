@@ -1,0 +1,89 @@
+# One stack per environment. Deployed to /srv/balancebridge/{uat,prod}/ with its own .env.
+# Required in .env: ENV_NAME (uat|prod), POSTGRES_PASSWORD, SESSION_PEPPER, ... (see .env.example)
+name: bb-${ENV_NAME}
+services:
+  portal:
+    build:
+      context: ./repo/portal
+    image: bb-portal:${ENV_NAME}
+    container_name: portal-${ENV_NAME}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://portal:${POSTGRES_PASSWORD}@db:5432/portal
+      UPLOADS_DIR: /data/uploads
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [default, edge]
+
+  db:
+    image: postgres:16-alpine
+    container_name: db-${ENV_NAME}
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: portal
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: portal
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U portal -d portal']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # No host port exposed — reachable only on the internal network.
+
+  docuseal:
+    image: docuseal/docuseal:latest
+    container_name: docuseal-${ENV_NAME}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://portal:${POSTGRES_PASSWORD}@db:5432/docuseal
+      SECRET_KEY_BASE: ${DOCUSEAL_SECRET_KEY_BASE}
+      HOST: ${DOCUSEAL_PUBLIC_HOST}
+      FORCE_SSL: 'true'
+    volumes:
+      - docuseal:/data
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [default, edge]
+
+  backup:
+    image: postgres:16-alpine
+    container_name: backup-${ENV_NAME}
+    restart: unless-stopped
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./backups:/backups
+      - uploads:/data/uploads:ro
+    entrypoint: /bin/sh
+    # Nightly at 03:15 UTC: pg_dump (portal + docuseal) + uploads tarball, keep 14 days.
+    command:
+      - -c
+      - |
+        while true; do
+          sleep_secs=$$(( ( ( 3*3600 + 15*60 ) - ( $$(date +%s) % 86400 ) + 86400 ) % 86400 ));
+          sleep $$sleep_secs;
+          ts=$$(date +%Y%m%d-%H%M%S);
+          pg_dump -h db -U portal portal   | gzip > /backups/portal-$$ts.sql.gz;
+          pg_dump -h db -U portal docuseal | gzip > /backups/docuseal-$$ts.sql.gz || true;
+          tar czf /backups/uploads-$$ts.tar.gz -C /data uploads;
+          find /backups -type f -mtime +14 -delete;
+        done
+
+volumes:
+  pgdata:
+  uploads:
+  docuseal:
+
+networks:
+  default:
+  edge:
+    name: bb-${ENV_NAME}
+    external: true

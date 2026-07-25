@@ -1,0 +1,62 @@
+name: Deploy Production
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency: deploy-prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Configure the 'production' environment in GitHub with a required reviewer
+    # so every prod deploy needs a manual approval click.
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: site/package-lock.json }
+
+      - name: Build marketing site (production URL)
+        run: npm ci --no-fund --no-audit && npm run build
+        working-directory: site
+        env:
+          SITE_URL: https://balancebridge.us
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sync site build + repo to VPS
+        run: |
+          rsync -az --delete site/dist/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/srv/balancebridge/prod/site-dist/
+          rsync -az --delete --exclude node_modules --exclude site/dist --exclude .git \
+            ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/srv/balancebridge/prod/repo/
+
+      - name: Deploy stack
+        run: |
+          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} bash -s <<'DEPLOY'
+          set -euo pipefail
+          cd /srv/balancebridge/prod
+          cp repo/infra/stack/docker-compose.yml docker-compose.yml
+          docker compose --env-file .env build portal
+          docker compose --env-file .env up -d --remove-orphans
+          docker compose --env-file .env exec -T portal node dist/db/migrate.js
+          cd /srv/balancebridge/caddy
+          cp /srv/balancebridge/prod/repo/infra/caddy/Caddyfile Caddyfile
+          cp /srv/balancebridge/prod/repo/infra/caddy/docker-compose.yml docker-compose.yml
+          docker compose --env-file .env up -d
+          docker compose --env-file .env exec -T caddy caddy reload --config /etc/caddy/Caddyfile || true
+          DEPLOY
+
+      - name: Smoke test
+        run: |
+          sleep 5
+          for url in https://balancebridge.us/ https://portal.balancebridge.us/healthz; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$url")
+            [ "$code" = "200" ] || { echo "$url returned $code"; exit 1; }
+          done

@@ -1,0 +1,23 @@
+<% layout('../layout') %>
+<div class="page-head">
+  <p><a class="link" href="/admin">← Admin</a></p>
+  <h1>Audit log</h1>
+  <p class="sub">Append-only. Most recent 300 entries.</p>
+</div>
+
+<section class="card">
+  <table class="table small">
+    <thead><tr><th>When</th><th>Who</th><th>Action</th><th class="hide-sm">Entity</th><th class="hide-sm">IP</th></tr></thead>
+    <tbody>
+      <% it.auditRows.forEach(function (row) { %>
+      <tr>
+        <td class="muted tabular"><%= it.fmtDateTime(row.entry.at) %></td>
+        <td><%= row.userName || 'system' %><% if (row.userEmail) { %><div class="muted small"><%= row.userEmail %></div><% } %></td>
+        <td><code class="code-chip"><%= row.entry.action %></code></td>
+        <td class="hide-sm muted small"><%= row.entry.entity ? row.entry.entity + ' ' + (row.entry.entityId || '') : '—' %></td>
+        <td class="hide-sm muted small tabular"><%= row.entry.ip || '—' %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>

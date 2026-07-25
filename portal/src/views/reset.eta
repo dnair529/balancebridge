@@ -1,0 +1,11 @@
+<% layout('layout') %>
+<h1 class="auth-title">Choose a new password</h1>
+<p class="auth-sub">At least 12 characters. A password manager helps.</p>
+<form method="post" action="/reset-password/<%= it.token %>" class="stack">
+  <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+  <label class="field">
+    <span>New password</span>
+    <input type="password" name="password" required minlength="12" autocomplete="new-password" autofocus>
+  </label>
+  <button class="btn btn-primary btn-block" type="submit">Update password</button>
+</form>

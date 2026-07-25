@@ -1,0 +1,46 @@
+<% layout('layout') %>
+<% const q = it.user.role === 'client' ? '' : '?client=' + it.clientId; %>
+<div class="page-head">
+  <h1>Tasks</h1>
+  <p class="sub">Checklists we work through together. Check off yours — we handle the rest.</p>
+</div>
+
+<% if (it.lists.length === 0) { %>
+  <section class="card"><p class="empty">No checklists yet.</p></section>
+<% } %>
+
+<% it.lists.forEach(function (list) { %>
+  <% const items = it.byList.get(list.id) || []; %>
+  <% const done = items.filter(function (t) { return t.completedAt; }).length; %>
+  <section class="card">
+    <div class="card-head">
+      <h2><%= list.title %></h2>
+      <span class="muted small tabular"><%= done %>/<%= items.length %> done</span>
+    </div>
+    <ul class="task-list">
+      <% items.forEach(function (t) { %>
+        <li class="task-row<%= t.completedAt ? ' done' : '' %>">
+          <% const canToggle = it.user.role !== 'client' || t.owner === 'client'; %>
+          <% if (canToggle) { %>
+            <form method="post" action="/tasks/<%= t.id %>/toggle<%= q %>" class="inline" data-task-toggle>
+              <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+              <button type="submit" class="checkbox<%= t.completedAt ? ' checked' : '' %>" aria-label="<%= t.completedAt ? 'Mark not done' : 'Mark done' %>">
+                <% if (t.completedAt) { %><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg><% } %>
+              </button>
+            </form>
+          <% } else { %>
+            <span class="checkbox locked<%= t.completedAt ? ' checked' : '' %>" title="We handle this one">
+              <% if (t.completedAt) { %><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg><% } %>
+            </span>
+          <% } %>
+          <div class="task-body">
+            <span class="task-title"><%= t.title %></span>
+            <% if (t.notes) { %><span class="muted small"><%= t.notes %></span><% } %>
+          </div>
+          <span class="chip <%= t.owner === 'client' ? 'chip-you' : '' %>"><%= t.owner === 'client' ? 'you' : 'us' %></span>
+          <% if (t.dueDate) { %><span class="muted small">due <%= it.fmtDate(t.dueDate) %></span><% } %>
+        </li>
+      <% }) %>
+    </ul>
+  </section>
+<% }) %>

@@ -1,0 +1,61 @@
+name: Deploy UAT
+on:
+  push:
+    branches: [uat]
+  workflow_dispatch:
+
+concurrency: deploy-uat
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: uat
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: site/package-lock.json }
+
+      - name: Build marketing site (UAT URL)
+        run: npm ci --no-fund --no-audit && npm run build
+        working-directory: site
+        env:
+          SITE_URL: https://uat.balancebridge.us
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sync site build + repo to VPS
+        run: |
+          rsync -az --delete site/dist/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/srv/balancebridge/uat/site-dist/
+          rsync -az --delete --exclude node_modules --exclude site/dist --exclude .git \
+            ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/srv/balancebridge/uat/repo/
+
+      - name: Deploy stack
+        run: |
+          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} bash -s <<'DEPLOY'
+          set -euo pipefail
+          cd /srv/balancebridge/uat
+          cp repo/infra/stack/docker-compose.yml docker-compose.yml
+          docker compose --env-file .env build portal
+          docker compose --env-file .env up -d --remove-orphans
+          docker compose --env-file .env exec -T portal node dist/db/migrate.js
+          # Caddy (idempotent — first run brings it up, later runs reload config)
+          cd /srv/balancebridge/caddy
+          cp /srv/balancebridge/uat/repo/infra/caddy/Caddyfile Caddyfile
+          cp /srv/balancebridge/uat/repo/infra/caddy/docker-compose.yml docker-compose.yml
+          docker compose --env-file .env up -d
+          docker compose --env-file .env exec -T caddy caddy reload --config /etc/caddy/Caddyfile || true
+          DEPLOY
+
+      - name: Smoke test
+        run: |
+          sleep 5
+          code=$(curl -s -o /dev/null -w "%{http_code}" -u "${{ secrets.UAT_BASICAUTH }}" https://uat.balancebridge.us/)
+          [ "$code" = "200" ] || { echo "UAT site returned $code"; exit 1; }
+          code=$(curl -s -o /dev/null -w "%{http_code}" https://portal-uat.balancebridge.us/healthz)
+          [ "$code" = "200" ] || { echo "UAT portal returned $code"; exit 1; }

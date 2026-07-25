@@ -1,0 +1,124 @@
+<% layout('../layout') %>
+<div class="page-head">
+  <p><a class="link" href="/admin/clients">← Clients</a></p>
+  <h1><%= it.client.businessName %></h1>
+  <p class="sub">
+    <%= it.client.contactName || 'No contact yet' %>
+    <% if (it.client.email) { %> · <%= it.client.email %><% } %>
+    <% if (it.client.phone) { %> · <%= it.client.phone %><% } %>
+    · <span class="chip status-<%= it.client.status %>"><%= it.client.status %></span>
+  </p>
+  <div class="action-row">
+    <a class="btn btn-ghost btn-sm" href="/dashboard?client=<%= it.client.id %>">Dashboard</a>
+    <a class="btn btn-ghost btn-sm" href="/documents?client=<%= it.client.id %>">Documents</a>
+    <a class="btn btn-ghost btn-sm" href="/messages?client=<%= it.client.id %>">Messages</a>
+    <a class="btn btn-ghost btn-sm" href="/tasks?client=<%= it.client.id %>">Tasks</a>
+    <a class="btn btn-ghost btn-sm" href="/billing?client=<%= it.client.id %>">Billing</a>
+    <a class="btn btn-ghost btn-sm" href="/signatures?client=<%= it.client.id %>">Signatures</a>
+  </div>
+</div>
+
+<div class="two-col">
+  <section class="card">
+    <div class="card-head"><h2>Portal users</h2></div>
+    <% if (it.userRows.length === 0 && it.inviteRows.length === 0) { %>
+      <p class="empty">No portal users yet — send an invite from the <a class="link" href="/admin/invites">Invites page</a>.</p>
+    <% } %>
+    <ul class="list">
+      <% it.userRows.forEach(function (u) { %>
+        <li class="list-row">
+          <span class="strong"><%= u.name %></span>
+          <span class="muted small"><%= u.email %></span>
+          <% if (u.disabled) { %><span class="chip">disabled</span><% } %>
+          <% if (u.totpEnabled) { %><span class="chip chip-you">MFA</span><% } %>
+        </li>
+      <% }) %>
+      <% it.inviteRows.forEach(function (inv) { %>
+        <li class="list-row">
+          <span><%= inv.email %></span>
+          <span class="chip">invited</span>
+          <span class="muted small">expires <%= it.fmtDate(inv.expiresAt) %></span>
+        </li>
+      <% }) %>
+    </ul>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>New checklist</h2></div>
+    <form method="post" action="/admin/clients/<%= it.client.id %>/tasks" class="stack">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <label class="field"><span>Template</span>
+        <select name="template">
+          <option value="">Custom (use lines below)</option>
+          <% it.templates.forEach(function (t) { %><option value="<%= t.key %>"><%= t.title %></option><% }) %>
+        </select>
+      </label>
+      <label class="field"><span>Title</span><input type="text" name="title" placeholder="Leave blank to use template name"></label>
+      <label class="field"><span>Custom items (one per line, start with ! for firm-side)</span><textarea name="items" rows="3" data-autosize placeholder="Upload June statements&#10;!Reconcile accounts"></textarea></label>
+      <button class="btn btn-primary btn-sm" type="submit">Create checklist</button>
+    </form>
+  </section>
+</div>
+
+<div class="two-col">
+  <section class="card">
+    <div class="card-head"><h2>Documents</h2><a class="link" href="/documents?client=<%= it.client.id %>">Open →</a></div>
+    <% if (it.docs.length === 0) { %><p class="empty">None yet.</p><% } else { %>
+      <ul class="list">
+        <% it.docs.slice(0, 6).forEach(function (d) { %>
+          <li class="list-row"><span class="strong"><%= d.filename %></span><span class="muted small"><%= it.fmtDate(d.createdAt) %></span></li>
+        <% }) %>
+      </ul>
+    <% } %>
+    <% if (it.docusealOn && it.docs.length > 0) { %>
+      <hr class="rule">
+      <h3 class="h3">Request a signature</h3>
+      <form method="post" action="/admin/signatures/new" class="stack">
+        <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+        <label class="field"><span>PDF document</span>
+          <select name="document_id">
+            <% it.docs.forEach(function (d) { %>
+              <% if (d.filename.toLowerCase().endsWith('.pdf')) { %><option value="<%= d.id %>"><%= d.filename %></option><% } %>
+            <% }) %>
+          </select>
+        </label>
+        <label class="field"><span>Title</span><input type="text" name="title" required></label>
+        <label class="field"><span>Signer email</span><input type="email" name="signer_email" required value="<%= it.client.email || '' %>"></label>
+        <button class="btn btn-primary btn-sm" type="submit">Create signature request</button>
+      </form>
+    <% } %>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Invoices</h2></div>
+    <% if (it.invoiceRows.length === 0) { %><p class="empty">None mirrored from Stripe yet.</p><% } else { %>
+      <table class="table">
+        <thead><tr><th>Invoice</th><th>Status</th><th class="tabular">Amount</th></tr></thead>
+        <tbody>
+          <% it.invoiceRows.forEach(function (inv) { %>
+            <tr>
+              <td><%= inv.number || inv.stripeInvoiceId %></td>
+              <td><span class="chip status-<%= inv.status %>"><%= inv.status %></span></td>
+              <td class="tabular"><%= it.fmtMoney(inv.amountDueCents, inv.currency) %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+    <div class="card-head" style="margin-top:1rem"><h2>Signatures</h2></div>
+    <% if (it.sigRows.length === 0) { %><p class="empty">None yet.</p><% } else { %>
+      <ul class="list">
+        <% it.sigRows.forEach(function (s) { %>
+          <li class="list-row"><span><%= s.title %></span><span class="chip status-<%= s.status %>"><%= s.status %></span><span class="muted small"><%= s.signerEmail %></span></li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+</div>
+
+<% if (it.client.notes) { %>
+<section class="card">
+  <div class="card-head"><h2>Notes</h2></div>
+  <p class="muted"><%= it.client.notes %></p>
+</section>
+<% } %>

@@ -1,0 +1,25 @@
+<% layout('layout') %>
+<% const q = it.user.role === 'client' ? '' : '?client=' + it.clientId; %>
+<div class="page-head">
+  <h1>Signatures</h1>
+  <p class="sub">Documents waiting for your signature, and the ones you’ve finished.</p>
+</div>
+
+<section class="card">
+  <% if (it.sigRows.length === 0) { %>
+    <p class="empty">Nothing to sign right now.</p>
+  <% } else { %>
+    <ul class="list">
+      <% it.sigRows.forEach(function (s) { %>
+        <li class="list-row">
+          <a class="link strong" href="/signatures/<%= s.id %><%= q %>"><%= s.title %></a>
+          <span class="chip status-<%= s.status %>"><%= s.status %></span>
+          <span class="muted small"><%= it.fmtDate(s.createdAt) %></span>
+          <% if (s.status === 'pending') { %>
+            <a class="btn btn-primary btn-sm" href="/signatures/<%= s.id %><%= q %>">Review &amp; sign</a>
+          <% } %>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>

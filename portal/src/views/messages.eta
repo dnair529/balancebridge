@@ -1,0 +1,36 @@
+<% layout('layout') %>
+<% const q = it.user.role === 'client' ? '' : '?client=' + it.clientId; %>
+<div class="page-head">
+  <h1>Messages</h1>
+  <p class="sub">Questions about your books stay here — searchable, not lost in email.</p>
+</div>
+
+<section class="card">
+  <div class="card-head"><h2>Start a conversation</h2></div>
+  <form method="post" action="/messages/new<%= q %>" class="stack">
+    <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+    <label class="field"><span>Subject</span><input type="text" name="subject" required maxlength="200"></label>
+    <label class="field"><span>Message</span><textarea name="body" rows="3" required data-autosize></textarea></label>
+    <button class="btn btn-primary" type="submit">Send</button>
+  </form>
+</section>
+
+<section class="card">
+  <div class="card-head"><h2>Conversations</h2></div>
+  <% if (it.threadRows.length === 0) { %>
+    <p class="empty">No conversations yet.</p>
+  <% } else { %>
+    <ul class="list">
+      <% it.threadRows.forEach(function (row) { %>
+        <li class="list-row">
+          <a class="link<%= row.unread ? ' strong' : '' %>" href="/messages/<%= row.thread.id %><%= q %>">
+            <%= row.thread.subject %>
+            <% if (row.unread) { %><span class="badge">new</span><% } %>
+          </a>
+          <span class="muted small"><%= row.messageCount %> message<%= row.messageCount === 1 ? '' : 's' %> · <%= it.fmtDate(row.lastMessageAt || row.thread.createdAt) %></span>
+          <% if (row.thread.closedAt) { %><span class="chip">closed</span><% } %>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>

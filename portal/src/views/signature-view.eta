@@ -1,0 +1,17 @@
+<% layout('layout') %>
+<% const q = it.user.role === 'client' ? '' : '?client=' + it.clientId; %>
+<div class="page-head">
+  <p><a class="link" href="/signatures<%= q %>">← All signatures</a></p>
+  <h1><%= it.sig.title %></h1>
+</div>
+
+<% if (it.sig.status === 'completed') { %>
+  <section class="card"><p class="empty">Signed on <%= it.fmtDate(it.sig.completedAt) %>. The signed copy is in your Documents.</p></section>
+<% } else if (it.embedUrl) { %>
+  <section class="card sign-frame-card">
+    <!-- DocuSeal embed: CSP frame-src is widened to the DocuSeal origin on this route only. -->
+    <iframe src="<%= it.embedUrl %>" class="sign-frame" title="Sign <%= it.sig.title %>" allow="camera"></iframe>
+  </section>
+<% } else { %>
+  <section class="card"><p class="empty">This document isn’t ready to sign yet. Check back shortly or message us.</p></section>
+<% } %>

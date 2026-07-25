@@ -1,0 +1,42 @@
+<% layout('layout') %>
+<div class="page-head">
+  <h1>Settings</h1>
+  <p class="sub">Your account and security.</p>
+</div>
+
+<section class="card">
+  <div class="card-head"><h2>Change password</h2></div>
+  <form method="post" action="/settings/password" class="stack narrow">
+    <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+    <label class="field"><span>Current password</span><input type="password" name="current_password" required autocomplete="current-password"></label>
+    <label class="field"><span>New password (12+ characters)</span><input type="password" name="new_password" required minlength="12" autocomplete="new-password"></label>
+    <button class="btn btn-primary" type="submit">Update password</button>
+  </form>
+</section>
+
+<section class="card">
+  <div class="card-head"><h2>Two-step verification</h2></div>
+  <% if (it.user.totpEnabled) { %>
+    <p>Two-step verification is <strong>on</strong>. You’ll enter a code from your authenticator app when you sign in.</p>
+    <form method="post" action="/settings/mfa/disable" class="stack narrow">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <label class="field"><span>Confirm with your password</span><input type="password" name="password" required autocomplete="current-password"></label>
+      <button class="btn btn-ghost danger" type="submit">Turn off</button>
+    </form>
+  <% } else if (it.qr) { %>
+    <p>Scan this QR code with your authenticator app (1Password, Google Authenticator, Authy), then enter the 6-digit code to finish.</p>
+    <img src="<%= it.qr %>" alt="TOTP QR code" class="qr" width="220" height="220">
+    <p class="muted small">Can’t scan? Enter this key manually: <code><%= it.totpSecret %></code></p>
+    <form method="post" action="/settings/mfa/verify" class="stack narrow">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <label class="field"><span>6-digit code</span><input type="text" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required class="code-input"></label>
+      <button class="btn btn-primary" type="submit">Turn on</button>
+    </form>
+  <% } else { %>
+    <p>Add a second step at sign-in — a 6-digit code from your phone. Strongly recommended.</p>
+    <form method="post" action="/settings/mfa/setup">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <button class="btn btn-primary" type="submit">Set up two-step verification</button>
+    </form>
+  <% } %>
+</section>

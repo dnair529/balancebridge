@@ -1,0 +1,49 @@
+<% layout('../layout') %>
+<div class="page-head">
+  <h1>Admin</h1>
+  <p class="sub">Clients, leads, and open items across the firm.</p>
+</div>
+
+<div class="stat-grid">
+  <a class="stat-card" href="/admin/clients"><span class="stat-num"><%= it.clientRows.length %></span><span class="stat-label">Clients</span></a>
+  <a class="stat-card" href="/admin/leads"><span class="stat-num"><%= it.openLeads.length %></span><span class="stat-label">Unhandled leads</span></a>
+  <span class="stat-card"><span class="stat-num"><%= it.pendingSigs.length %></span><span class="stat-label">Pending signatures</span></span>
+  <span class="stat-card"><span class="stat-num"><%= it.openInvoices.length %></span><span class="stat-label">Open invoices</span></span>
+</div>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Quick actions</h2>
+  </div>
+  <div class="action-row">
+    <a class="btn btn-ghost btn-sm" href="/admin/clients">Manage clients</a>
+    <a class="btn btn-ghost btn-sm" href="/admin/invites">Send an invite</a>
+    <a class="btn btn-ghost btn-sm" href="/admin/leads">Review leads</a>
+    <% if (it.user.role === 'admin') { %><a class="btn btn-ghost btn-sm" href="/admin/audit">Audit log</a><% } %>
+    <form method="post" action="/admin/invoices/sync" class="inline">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <button class="btn btn-ghost btn-sm" type="submit">Sync invoices from Stripe</button>
+    </form>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-head"><h2>Clients</h2><a class="link" href="/admin/clients">Add / edit →</a></div>
+  <% if (it.clientRows.length === 0) { %>
+    <p class="empty">No clients yet — add your first from the Clients page.</p>
+  <% } else { %>
+    <table class="table">
+      <thead><tr><th>Business</th><th class="hide-sm">Contact</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        <% it.clientRows.forEach(function (c) { %>
+        <tr>
+          <td class="strong"><a class="link" href="/admin/clients/<%= c.id %>"><%= c.businessName %></a></td>
+          <td class="hide-sm muted"><%= c.contactName || '—' %></td>
+          <td><span class="chip status-<%= c.status %>"><%= c.status %></span></td>
+          <td class="row-actions"><a class="btn btn-ghost btn-sm" href="/dashboard?client=<%= c.id %>">View as portal</a></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</section>

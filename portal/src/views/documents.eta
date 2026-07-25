@@ -1,0 +1,57 @@
+<% layout('layout') %>
+<% const q = it.user.role === 'client' ? '' : '?client=' + it.clientId; %>
+<div class="page-head">
+  <h1>Documents</h1>
+  <p class="sub">Upload statements and files — we’ll take it from there. PDF, images, spreadsheets, QuickBooks files. 25MB max.</p>
+</div>
+
+<section class="card upload-card" id="dropzone">
+  <form method="post" action="/documents/upload<%= q %>" enctype="multipart/form-data" id="upload-form" class="upload-form">
+    <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+    <div class="upload-inner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="upload-icon"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>
+      <p><strong>Drag a file here</strong> or</p>
+      <label class="btn btn-ghost btn-sm file-label">
+        Choose file
+        <input type="file" name="file" id="file-input" required>
+      </label>
+      <label class="field inline-field">
+        <span>Folder</span>
+        <select name="folder">
+          <% it.folders.forEach(function (f) { %><option value="<%= f %>"><%= f %></option><% }) %>
+        </select>
+      </label>
+      <button class="btn btn-primary btn-sm" type="submit">Upload</button>
+      <p class="muted small" id="file-name"></p>
+    </div>
+  </form>
+</section>
+
+<section class="card">
+  <% if (it.docs.length === 0) { %>
+    <p class="empty">No documents yet. Your uploads and our deliverables will show up here.</p>
+  <% } else { %>
+    <table class="table">
+      <thead><tr><th>Name</th><th>Folder</th><th class="hide-sm">Size</th><th class="hide-sm">Added</th><th></th></tr></thead>
+      <tbody>
+        <% it.docs.forEach(function (d) { %>
+        <tr>
+          <td class="strong"><%= d.filename %></td>
+          <td><span class="chip"><%= d.folder %></span></td>
+          <td class="hide-sm muted tabular"><%= it.fmtBytes(d.sizeBytes) %></td>
+          <td class="hide-sm muted"><%= it.fmtDate(d.createdAt) %></td>
+          <td class="row-actions">
+            <a class="btn btn-ghost btn-sm" href="/documents/<%= d.id %>/download<%= q %>">Download</a>
+            <% if (it.user.role !== 'client' || d.uploadedBy === it.user.id) { %>
+            <form method="post" action="/documents/<%= d.id %>/delete<%= q %>" class="inline" data-confirm="Delete <%= d.filename %>?">
+              <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+              <button class="btn btn-ghost btn-sm danger" type="submit">Delete</button>
+            </form>
+            <% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</section>

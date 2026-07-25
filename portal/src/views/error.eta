@@ -1,0 +1,6 @@
+<% layout('layout') %>
+<div class="error-page">
+  <h1><%= it.title %></h1>
+  <p><%= it.message %></p>
+  <a class="btn btn-primary" href="<%= it.user ? '/dashboard' : '/login' %>">Back to safety</a>
+</div>

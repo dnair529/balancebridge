@@ -1,0 +1,81 @@
+<% layout('layout') %>
+<% const q = it.user.role === 'client' ? '' : (it.query.client ? '?client=' + it.query.client : ''); %>
+<div class="page-head">
+  <h1>Welcome back, <%= (it.user.name || '').split(' ')[0] %></h1>
+  <p class="sub">Here’s where things stand.</p>
+</div>
+
+<div class="stat-grid">
+  <a class="stat-card" href="/tasks<%= q %>">
+    <span class="stat-num"><%= it.openTasks.length %></span>
+    <span class="stat-label">Open task<%= it.openTasks.length === 1 ? '' : 's' %> for you</span>
+  </a>
+  <a class="stat-card" href="/billing<%= q %>">
+    <span class="stat-num tabular"><%= it.fmtMoney(it.amountDueCents) %></span>
+    <span class="stat-label">Balance due</span>
+  </a>
+  <a class="stat-card" href="/signatures<%= q %>">
+    <span class="stat-num"><%= it.pendingSignatures.length %></span>
+    <span class="stat-label">Awaiting signature</span>
+  </a>
+  <a class="stat-card" href="/documents<%= q %>">
+    <span class="stat-num"><%= it.recentDocs.length %></span>
+    <span class="stat-label">Recent documents</span>
+  </a>
+</div>
+
+<div class="two-col">
+  <section class="card">
+    <div class="card-head">
+      <h2>Your next steps</h2>
+      <a class="link" href="/tasks<%= q %>">All tasks →</a>
+    </div>
+    <% if (it.openTasks.length === 0) { %>
+      <p class="empty">Nothing needed from you right now. Enjoy it.</p>
+    <% } else { %>
+      <ul class="list">
+        <% it.openTasks.forEach(function (t) { %>
+          <li class="list-row">
+            <span class="dot"></span>
+            <span><%= t.title %></span>
+            <% if (t.dueDate) { %><span class="muted small">due <%= it.fmtDate(t.dueDate) %></span><% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Recent conversations</h2>
+      <a class="link" href="/messages<%= q %>">All messages →</a>
+    </div>
+    <% if (it.openThreads.length === 0) { %>
+      <p class="empty">No open conversations. Start one from Messages.</p>
+    <% } else { %>
+      <ul class="list">
+        <% it.openThreads.forEach(function (t) { %>
+          <li class="list-row">
+            <a class="link" href="/messages/<%= t.id %><%= q %>"><%= t.subject %></a>
+            <span class="muted small"><%= it.fmtDate(t.createdAt) %></span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+</div>
+
+<% if (it.openInvoices.length > 0) { %>
+<section class="card notice-card">
+  <div class="card-head"><h2>Open invoices</h2></div>
+  <ul class="list">
+    <% it.openInvoices.forEach(function (inv) { %>
+      <li class="list-row">
+        <span>Invoice <%= inv.number || inv.stripeInvoiceId %></span>
+        <span class="tabular"><%= it.fmtMoney(inv.amountDueCents - inv.amountPaidCents, inv.currency) %></span>
+        <% if (inv.hostedInvoiceUrl) { %><a class="btn btn-primary btn-sm" href="<%= inv.hostedInvoiceUrl %>" rel="noopener">Pay now</a><% } %>
+      </li>
+    <% }) %>
+  </ul>
+</section>
+<% } %>

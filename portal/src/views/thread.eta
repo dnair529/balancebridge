@@ -1,0 +1,30 @@
+<% layout('layout') %>
+<% const q = it.user.role === 'client' ? '' : '?client=' + it.clientId; %>
+<div class="page-head">
+  <p><a class="link" href="/messages<%= q %>">← All messages</a></p>
+  <h1><%= it.thread.subject %></h1>
+</div>
+
+<section class="thread">
+  <% it.msgs.forEach(function (row) { %>
+    <article class="bubble <%= row.senderRole === 'client' ? 'from-client' : 'from-firm' %><%= row.message.senderId === it.user.id ? ' mine' : '' %>">
+      <header>
+        <strong><%= row.senderName %></strong>
+        <span class="muted small"><%= it.fmtDateTime(row.message.createdAt) %></span>
+      </header>
+      <p><%= row.message.body %></p>
+    </article>
+  <% }) %>
+</section>
+
+<% if (!it.thread.closedAt) { %>
+<section class="card composer">
+  <form method="post" action="/messages/<%= it.thread.id %><%= q %>" class="stack">
+    <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+    <label class="field"><span class="visually-hidden">Reply</span><textarea name="body" rows="3" required placeholder="Write a reply…" data-autosize></textarea></label>
+    <button class="btn btn-primary" type="submit">Reply</button>
+  </form>
+</section>
+<% } else { %>
+  <p class="empty">This conversation is closed.</p>
+<% } %>

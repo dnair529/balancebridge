@@ -1,0 +1,45 @@
+<% layout('layout') %>
+<% const q = it.user.role === 'client' ? '' : '?client=' + it.clientId; %>
+<div class="page-head">
+  <h1>Billing</h1>
+  <p class="sub">Invoices and payments, handled securely by Stripe. We never see your card.</p>
+</div>
+
+<% if (it.portalAvailable) { %>
+<section class="card slim-card">
+  <form method="post" action="/billing/portal<%= q %>" class="inline">
+    <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+    <span>Update payment methods or download receipts in the secure billing portal.</span>
+    <button class="btn btn-ghost btn-sm" type="submit">Open billing portal</button>
+  </form>
+</section>
+<% } %>
+
+<section class="card">
+  <% if (it.invoiceRows.length === 0) { %>
+    <p class="empty">No invoices yet.</p>
+  <% } else { %>
+    <table class="table">
+      <thead><tr><th>Invoice</th><th>Status</th><th class="tabular">Amount</th><th class="hide-sm">Issued</th><th class="hide-sm">Due</th><th></th></tr></thead>
+      <tbody>
+        <% it.invoiceRows.forEach(function (inv) { %>
+        <tr>
+          <td class="strong"><%= inv.number || inv.stripeInvoiceId %></td>
+          <td><span class="chip status-<%= inv.status %>"><%= inv.status.replace('_', ' ') %></span></td>
+          <td class="tabular"><%= it.fmtMoney(inv.amountDueCents, inv.currency) %></td>
+          <td class="hide-sm muted"><%= it.fmtDate(inv.issuedAt) %></td>
+          <td class="hide-sm muted"><%= it.fmtDate(inv.dueAt) %></td>
+          <td class="row-actions">
+            <% if (inv.status === 'open' && inv.hostedInvoiceUrl) { %>
+              <a class="btn btn-primary btn-sm" href="<%= inv.hostedInvoiceUrl %>" rel="noopener">Pay now</a>
+            <% } %>
+            <% if (inv.invoicePdf) { %>
+              <a class="btn btn-ghost btn-sm" href="<%= inv.invoicePdf %>" rel="noopener">PDF</a>
+            <% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</section>

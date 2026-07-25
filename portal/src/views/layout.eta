@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title><%= it.title ? it.title + ' — ' : '' %>Balance Bridge Portal</title>
+  <link rel="stylesheet" href="/assets/portal.css">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+</head>
+<body class="<%= it.user ? 'app' : 'auth' %>">
+<% if (it.user) { %>
+  <header class="topbar">
+    <a class="brand" href="/dashboard">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 25h24" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/><path d="M6 21c3-8 17-8 20 0" stroke="#10B981" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M10 21v4M22 21v4" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/></svg>
+      <span class="brand-word">Balance Bridge <em>Portal</em></span>
+    </a>
+    <div class="topbar-right">
+      <span class="user-chip" title="<%= it.user.email %>"><%= it.user.name %></span>
+      <form method="post" action="/logout">
+        <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+        <button class="btn btn-ghost btn-sm" type="submit">Sign out</button>
+      </form>
+    </div>
+  </header>
+  <div class="shell">
+    <nav class="sidenav" aria-label="Main">
+      <%~ include('partials/nav-links', it) %>
+    </nav>
+    <main class="content">
+      <%~ include('partials/flash', it) %>
+      <%~ it.body %>
+    </main>
+  </div>
+  <nav class="tabbar" aria-label="Main">
+    <%~ include('partials/nav-links', { ...it, tabbar: true }) %>
+  </nav>
+<% } else { %>
+  <main class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <svg class="brand-mark lg" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 25h24" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/><path d="M6 21c3-8 17-8 20 0" stroke="#10B981" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M10 21v4M22 21v4" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/></svg>
+        <div class="auth-brand-name">Balance Bridge <span>FINANCIAL</span></div>
+      </div>
+      <%~ include('partials/flash', it) %>
+      <%~ it.body %>
+    </div>
+    <p class="auth-foot">Client portal · <a href="https://balancebridge.us">balancebridge.us</a></p>
+  </main>
+<% } %>
+<script src="/assets/portal.js" defer></script>
+</body>
+</html>

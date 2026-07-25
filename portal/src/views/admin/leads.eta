@@ -1,0 +1,41 @@
+<% layout('../layout') %>
+<div class="page-head">
+  <p><a class="link" href="/admin">← Admin</a></p>
+  <h1>Leads</h1>
+  <p class="sub">Submissions from the marketing site’s contact forms.</p>
+</div>
+
+<section class="card">
+  <% if (it.leadRows.length === 0) { %>
+    <p class="empty">No leads yet.</p>
+  <% } else { %>
+    <table class="table">
+      <thead><tr><th>Name</th><th class="hide-sm">Company</th><th>Contact</th><th class="hide-sm">Details</th><th class="hide-sm">When</th><th></th></tr></thead>
+      <tbody>
+        <% it.leadRows.forEach(function (l) { %>
+        <tr class="<%= l.handledAt ? 'muted-row' : '' %>">
+          <td class="strong"><%= l.name || '—' %></td>
+          <td class="hide-sm"><%= l.company || '—' %></td>
+          <td>
+            <% if (l.email) { %><div><a class="link" href="mailto:<%= l.email %>"><%= l.email %></a></div><% } %>
+            <% if (l.phone) { %><div class="muted small"><%= l.phone %></div><% } %>
+          </td>
+          <td class="hide-sm muted small">
+            <%= [l.businessType, l.revenue].filter(Boolean).join(' · ') || '—' %>
+            <% if (l.message) { %><div class="lead-msg" title="<%= l.message %>"><%= l.message.length > 90 ? l.message.slice(0, 90) + '…' : l.message %></div><% } %>
+          </td>
+          <td class="hide-sm muted small"><%= it.fmtDateTime(l.createdAt) %></td>
+          <td class="row-actions">
+            <% if (!l.handledAt) { %>
+            <form method="post" action="/admin/leads/<%= l.id %>/handled" class="inline">
+              <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+              <button class="btn btn-ghost btn-sm" type="submit">Mark handled</button>
+            </form>
+            <% } else { %><span class="chip status-paid">handled</span><% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</section>
