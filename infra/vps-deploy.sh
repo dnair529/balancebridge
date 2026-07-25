@@ -16,7 +16,8 @@ ENV_NAME="${1:-}"
 BRANCH=$([[ "$ENV_NAME" == "prod" ]] && echo main || echo uat)
 ROOT=/srv/balancebridge
 ENV_DIR="$ROOT/$ENV_NAME"
-REPO_URL=https://github.com/dnair529/balancebridge.git
+# SSH deploy key (read-only) lives at /root/.ssh/gh_bb — no token is stored on this box
+REPO_URL=git@github.com:dnair529/balancebridge.git
 EDGE_NET=n8n_default
 
 log() { printf '\n\033[1;32m==> %s\033[0m\n' "$*"; }
@@ -94,9 +95,7 @@ fi
 
 # ---------- 2. source ----------
 log "Fetching $BRANCH"
-[[ -f "$ROOT/.gitcreds" ]] || die "missing $ROOT/.gitcreds (https://USER:TOKEN@github.com)"
-chmod 600 "$ROOT/.gitcreds"
-export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=credential.helper GIT_CONFIG_VALUE_0="store --file=$ROOT/.gitcreds"
+[[ -f /root/.ssh/gh_bb ]] || die "missing /root/.ssh/gh_bb deploy key"
 if [[ -d "$ENV_DIR/repo/.git" ]]; then
   git -C "$ENV_DIR/repo" fetch origin "$BRANCH" --depth 1
   git -C "$ENV_DIR/repo" reset --hard "origin/$BRANCH"
