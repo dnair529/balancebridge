@@ -46,7 +46,8 @@ POSTGRES_PASSWORD=$(gen 32)
 SESSION_PEPPER=$(gen 48)
 DOCUSEAL_SECRET_KEY_BASE=$(gen 64)
 DOCUSEAL_PUBLIC_HOST=$([[ $env == prod ]] && echo sign.balancebridge.us || echo sign-uat.balancebridge.us)
-DOCUSEAL_URL=http://docuseal-$env:3000
+# Public origin — used for both the browser signing iframe and API calls (routed via Caddy)
+DOCUSEAL_URL=$([[ $env == prod ]] && echo https://sign.balancebridge.us || echo https://sign-uat.balancebridge.us)
 DOCUSEAL_API_KEY=CHANGE_ME_after_docuseal_first_boot
 DOCUSEAL_WEBHOOK_SECRET=$(gen 32)
 SITE_URL=$([[ $env == prod ]] && echo https://balancebridge.us || echo https://uat.balancebridge.us)
@@ -60,7 +61,7 @@ SMTP_PORT=587
 SMTP_USER=CHANGE_ME
 SMTP_PASS=CHANGE_ME
 MAIL_FROM="Balance Bridge <hello@balancebridge.us>"
-FIRM_NOTIFY_EMAIL=deepak529@gmail.com
+FIRM_INBOX=deepak529@gmail.com
 SEED_DEMO=$([[ $env == uat ]] && echo 1 || echo 0)
 COOKIE_SECURE=1
 EOF
