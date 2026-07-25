@@ -1,0 +1,130 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import StickyCTA from '../components/StickyCTA.astro';
+import { BUSINESS } from '../config';
+
+interface Props {
+  title: string;
+  description: string;
+  ogType?: string;
+  schema?: object[];
+  noIndex?: boolean;
+  ogImage?: string;
+}
+const { title, description, ogType = 'website', schema = [], noIndex = false, ogImage = '/og-default.png' } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImageUrl = new URL(ogImage, Astro.site);
+
+const orgSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'AccountingService',
+  '@id': `${BUSINESS.url}/#org`,
+  name: BUSINESS.name,
+  url: BUSINESS.url,
+  logo: `${BUSINESS.url}/favicon.svg`,
+  telephone: BUSINESS.phone,
+  email: BUSINESS.email,
+  priceRange: '$$',
+  areaServed: { '@type': 'State', name: 'Texas' },
+  description: 'Bookkeeping, accounting, and fractional CFO services for Texas small businesses.',
+  openingHours: 'Mo-Fr 08:30-17:30',
+  sameAs: [BUSINESS.social.linkedin],
+};
+const siteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  '@id': `${BUSINESS.url}/#website`,
+  url: BUSINESS.url,
+  name: BUSINESS.name,
+  publisher: { '@id': `${BUSINESS.url}/#org` },
+};
+const allSchema = [orgSchema, siteSchema, ...schema];
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noIndex && <meta name="robots" content="noindex, nofollow" />}
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#0B1F33" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <link rel="alternate" type="application/rss+xml" title={`${BUSINESS.shortName} blog`} href="/rss.xml" />
+
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:site_name" content={BUSINESS.name} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+
+    {allSchema.map((s) => (
+      <script type="application/ld+json" set:html={JSON.stringify(s)} />
+    ))}
+  </head>
+  <body class="min-h-screen antialiased">
+    <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-navy focus:px-4 focus:py-2 focus:text-white">Skip to content</a>
+    <Header />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+    <StickyCTA />
+
+    <script>
+      // Reveal-on-scroll
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const els = document.querySelectorAll('[data-reveal]');
+      if (prefersReduced || !('IntersectionObserver' in window)) {
+        els.forEach((el) => el.classList.add('revealed'));
+      } else {
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const e of entries) {
+              if (e.isIntersecting) {
+                e.target.classList.add('revealed');
+                io.unobserve(e.target);
+              }
+            }
+          },
+          { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+        );
+        els.forEach((el) => io.observe(el));
+      }
+
+      // Count-up numbers
+      const counters = document.querySelectorAll<HTMLElement>('[data-countup]');
+      if (counters.length && !prefersReduced && 'IntersectionObserver' in window) {
+        const cio = new IntersectionObserver((entries) => {
+          for (const e of entries) {
+            if (!e.isIntersecting) continue;
+            cio.unobserve(e.target);
+            const el = e.target as HTMLElement;
+            const target = parseFloat(el.dataset.countup || '0');
+            const suffix = el.dataset.suffix || '';
+            const dur = 1200;
+            const start = performance.now();
+            const step = (now: number) => {
+              const p = Math.min((now - start) / dur, 1);
+              const eased = 1 - Math.pow(1 - p, 3);
+              el.textContent = String(Math.round(target * eased)) + suffix;
+              if (p < 1) requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+          }
+        }, { threshold: 0.5 });
+        counters.forEach((el) => cio.observe(el));
+      }
+    </script>
+  </body>
+</html>

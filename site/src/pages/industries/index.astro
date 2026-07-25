@@ -1,0 +1,39 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import CTABand from '../../components/CTABand.astro';
+import { INDUSTRIES } from '../../data/industries';
+---
+<Base
+  title="Industries We Serve | Texas Bookkeeping | Balance Bridge"
+  description="Specialized bookkeeping for Texas contractors, restaurants, medical practices, ecommerce, professional services, and real estate businesses."
+>
+  <section class="relative overflow-hidden bg-navy">
+    <div class="arc-glow absolute inset-0" aria-hidden="true"></div>
+    <div class="relative mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-24">
+      <p class="eyebrow-dark" data-reveal>Industries</p>
+      <h1 class="mt-4 max-w-3xl font-display text-4xl font-semibold tracking-tight text-white md:text-5xl" data-reveal style="--reveal-delay:70ms">Bookkeeping that speaks your industry's language</h1>
+      <p class="mt-5 max-w-2xl text-[17px] leading-relaxed text-steel-400" data-reveal style="--reveal-delay:140ms">
+        Job costing isn't the same as prime cost. Retainage isn't the same as escrow. We set up your books around how your industry actually makes money — not a generic chart of accounts.
+      </p>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-24">
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {INDUSTRIES.map((ind, i) => (
+        <a href={`/industries/${ind.slug}/`} class="card card-hover group flex flex-col p-8" data-reveal style={`--reveal-delay:${(i % 3) * 70}ms`}>
+          <span class="inline-flex w-fit rounded-xl bg-mist p-3.5 text-navy transition-colors group-hover:bg-accent group-hover:text-white"><Icon name={ind.icon} size={24} /></span>
+          <h2 class="mt-5 font-display text-xl font-semibold text-navy">{ind.name}</h2>
+          <p class="mt-2.5 flex-1 text-[14.5px] leading-relaxed text-steel">{ind.oneLiner}</p>
+          <span class="mt-5 flex items-center gap-1.5 text-[14px] font-semibold text-accent-600">How we help <Icon name="arrow-right" size={14} class="transition-transform duration-200 group-hover:translate-x-0.5" /></span>
+        </a>
+      ))}
+    </div>
+    <p class="mt-10 text-center text-[15px] text-steel" data-reveal>
+      Don't see your industry? We work with owner-run businesses of all kinds. <a href="/contact/" class="font-semibold text-accent-600 underline underline-offset-4">Ask us</a> — if we're not the right fit, we'll say so.
+    </p>
+  </section>
+
+  <CTABand />
+</Base>

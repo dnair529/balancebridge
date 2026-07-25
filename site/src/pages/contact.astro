@@ -1,0 +1,102 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { BUSINESS } from '../config';
+import { FAQS } from '../data/faqs';
+import FAQ from '../components/FAQ.astro';
+
+const contactFaqs = FAQS.filter((f) => f.category === 'Getting started').slice(0, 3);
+const contactSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'ContactPage',
+  name: 'Contact Balance Bridge Financial',
+  url: `${BUSINESS.url}/contact/`,
+};
+---
+<Base
+  title="Contact Us — Book a Free Consultation | Balance Bridge"
+  description="Book a free bookkeeping consultation for your Texas business. Call, email, or grab a time on our calendar — we reply within 1 business day."
+  schema={[contactSchema]}
+>
+  <section class="relative overflow-hidden bg-navy">
+    <div class="arc-glow absolute inset-0" aria-hidden="true"></div>
+    <div class="relative mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-20">
+      <p class="eyebrow-dark" data-reveal>Contact</p>
+      <h1 class="mt-4 max-w-3xl font-display text-4xl font-semibold tracking-tight text-white md:text-5xl" data-reveal style="--reveal-delay:70ms">Let's look at your books together</h1>
+      <p class="mt-5 max-w-2xl text-[17px] leading-relaxed text-steel-400" data-reveal style="--reveal-delay:140ms">
+        A free, no-pressure consultation: 20 minutes, plain English, and an honest read on what your books need — even if the answer is "you're fine."
+      </p>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-20">
+    <div class="grid gap-12 lg:grid-cols-[1fr_1.25fr]">
+      <div>
+        <h2 class="font-display text-[24px] font-semibold tracking-tight text-navy">Reach us directly</h2>
+        <ul class="mt-7 space-y-5">
+          <li>
+            <a href={BUSINESS.phoneHref} class="group flex items-center gap-4">
+              <span class="rounded-xl bg-mist p-3 text-navy transition-colors group-hover:bg-accent group-hover:text-white"><Icon name="phone" size={20} /></span>
+              <span><span class="block text-[15.5px] font-semibold text-navy">{BUSINESS.phone}</span><span class="text-[13.5px] text-steel">{BUSINESS.hours}</span></span>
+            </a>
+          </li>
+          <li>
+            <a href={`mailto:${BUSINESS.email}`} class="group flex items-center gap-4">
+              <span class="rounded-xl bg-mist p-3 text-navy transition-colors group-hover:bg-accent group-hover:text-white"><Icon name="mail" size={20} /></span>
+              <span><span class="block text-[15.5px] font-semibold text-navy">{BUSINESS.email}</span><span class="text-[13.5px] text-steel">{BUSINESS.replyPromise}</span></span>
+            </a>
+          </li>
+          <li class="flex items-center gap-4">
+            <span class="rounded-xl bg-mist p-3 text-navy"><Icon name="map-pin" size={20} /></span>
+            <span><span class="block text-[15.5px] font-semibold text-navy">Serving all of Texas</span><span class="text-[13.5px] text-steel">Remote-first — no office visit needed</span></span>
+          </li>
+        </ul>
+
+        <div class="card mt-10 bg-mist/50 p-7">
+          <h3 class="flex items-center gap-2.5 font-display text-[16px] font-semibold text-navy"><Icon name="calendar" size={18} class="text-accent-600" /> Prefer to pick a time?</h3>
+          <p class="mt-2.5 text-[14.5px] leading-relaxed text-steel">Grab any open slot on our calendar — you'll get a confirmation and reminder automatically.</p>
+          <a href={BUSINESS.calendarUrl} rel="noopener" class="btn-primary mt-5 w-full">Open the calendar <Icon name="arrow-right" size={15} /></a>
+        </div>
+
+        <div class="mt-10">
+          <h3 class="font-display text-[16px] font-semibold text-navy">Before you reach out</h3>
+          <FAQ items={contactFaqs} class="mt-4" />
+        </div>
+      </div>
+
+      <div>
+        <form class="card space-y-5 p-8 lg:p-10" method="POST" action="/api/leads">
+          <h2 class="font-display text-[24px] font-semibold tracking-tight text-navy">Send us a message</h2>
+          <input type="hidden" name="form" value="contact" />
+          <input type="text" name="website" class="hidden" tabindex="-1" autocomplete="off" aria-hidden="true" />
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label for="c-name" class="mb-1.5 block text-[13.5px] font-semibold text-navy">Your name *</label>
+              <input id="c-name" name="name" type="text" required autocomplete="name" class="w-full rounded-xl border-0 bg-mist px-4 py-3 text-[15px] text-navy ring-1 ring-navy/10 placeholder:text-steel-400 focus:ring-2 focus:ring-accent" />
+            </div>
+            <div>
+              <label for="c-email" class="mb-1.5 block text-[13.5px] font-semibold text-navy">Email *</label>
+              <input id="c-email" name="email" type="email" required autocomplete="email" class="w-full rounded-xl border-0 bg-mist px-4 py-3 text-[15px] text-navy ring-1 ring-navy/10 focus:ring-2 focus:ring-accent" />
+            </div>
+          </div>
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label for="c-phone" class="mb-1.5 block text-[13.5px] font-semibold text-navy">Phone <span class="font-normal text-steel">(optional)</span></label>
+              <input id="c-phone" name="phone" type="tel" autocomplete="tel" class="w-full rounded-xl border-0 bg-mist px-4 py-3 text-[15px] text-navy ring-1 ring-navy/10 focus:ring-2 focus:ring-accent" />
+            </div>
+            <div>
+              <label for="c-company" class="mb-1.5 block text-[13.5px] font-semibold text-navy">Business name</label>
+              <input id="c-company" name="company" type="text" autocomplete="organization" class="w-full rounded-xl border-0 bg-mist px-4 py-3 text-[15px] text-navy ring-1 ring-navy/10 focus:ring-2 focus:ring-accent" />
+            </div>
+          </div>
+          <div>
+            <label for="c-message" class="mb-1.5 block text-[13.5px] font-semibold text-navy">How can we help? *</label>
+            <textarea id="c-message" name="message" required rows="5" class="w-full rounded-xl border-0 bg-mist px-4 py-3 text-[15px] text-navy ring-1 ring-navy/10 placeholder:text-steel-400 focus:ring-2 focus:ring-accent" placeholder="Tell us about your business and where the books stand today…"></textarea>
+          </div>
+          <button type="submit" class="btn-primary w-full">Send message <Icon name="arrow-right" size={16} /></button>
+          <p class="text-center text-[12.5px] text-steel">{BUSINESS.replyPromise}. Everything you share stays confidential.</p>
+        </form>
+      </div>
+    </div>
+  </section>
+</Base>

@@ -1,0 +1,92 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import CTABand from '../../components/CTABand.astro';
+import FAQ from '../../components/FAQ.astro';
+import { LOCATIONS } from '../../data/locations';
+import { INDUSTRIES } from '../../data/industries';
+import { SERVICES } from '../../data/services';
+import { BUSINESS, CTA } from '../../config';
+
+export function getStaticPaths() {
+  return LOCATIONS.map((l) => ({ params: { slug: l.slug }, props: { l } }));
+}
+const { l } = Astro.props;
+const industries = INDUSTRIES.filter((i) => l.industriesEmphasis.includes(i.slug));
+const topServices = SERVICES.slice(0, 6);
+const breadcrumb = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: BUSINESS.url },
+    { '@type': 'ListItem', position: 2, name: 'Locations', item: `${BUSINESS.url}/locations/` },
+    { '@type': 'ListItem', position: 3, name: l.city, item: `${BUSINESS.url}/locations/${l.slug}/` },
+  ],
+};
+const localSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'AccountingService',
+  name: `${BUSINESS.name} — ${l.city}`,
+  url: `${BUSINESS.url}/locations/${l.slug}/`,
+  parentOrganization: { '@id': `${BUSINESS.url}/#org` },
+  areaServed: { '@type': 'City', name: l.city },
+  telephone: BUSINESS.phone,
+};
+---
+<Base title={l.metaTitle} description={l.metaDescription} schema={[breadcrumb, localSchema]}>
+  <section class="relative overflow-hidden bg-navy">
+    <div class="arc-glow absolute inset-0" aria-hidden="true"></div>
+    <div class="relative mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-24">
+      <nav aria-label="Breadcrumb" class="text-[13px] text-steel-400" data-reveal>
+        <a href="/" class="hover:text-white">Home</a> <span class="mx-1.5">/</span>
+        <a href="/locations/" class="hover:text-white">Locations</a> <span class="mx-1.5">/</span>
+        <span class="text-white/80">{l.city}</span>
+      </nav>
+      <h1 class="mt-6 max-w-3xl font-display text-[34px] font-semibold leading-[1.12] tracking-tight text-white md:text-5xl" data-reveal style="--reveal-delay:70ms">Bookkeeping & accounting for {l.city} businesses</h1>
+      <p class="mt-5 max-w-2xl text-[17px] leading-relaxed text-steel-400" data-reveal style="--reveal-delay:140ms">{l.heroSub}</p>
+      <a href={CTA.primaryHref} class="btn-primary mt-8" data-reveal style="--reveal-delay:200ms">{CTA.primary} <Icon name="arrow-right" size={16} /></a>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-24">
+    <div class="grid gap-14 lg:grid-cols-[1.2fr_1fr]">
+      <div class="space-y-4 text-[16px] leading-relaxed text-steel">
+        {l.intro.map((p) => <p data-reveal>{p}</p>)}
+        <div class="card mt-6 bg-mist/50 p-7" data-reveal>
+          <h2 class="flex items-center gap-2.5 font-display text-[16.5px] font-semibold text-navy"><Icon name="shield" size={18} class="text-accent-600" /> Remote-first, {l.city}-ready</h2>
+          <p class="mt-2.5 text-[14.5px] leading-relaxed text-steel">Secure client portal for documents and messages, video calls that respect your schedule, and books that close by the 10th — wherever in {l.city.includes('–') ? 'the metroplex' : l.city} you operate.</p>
+        </div>
+      </div>
+      <div>
+        <h2 class="font-display text-[20px] font-semibold tracking-tight text-navy" data-reveal>Big here: industries we serve in {l.city}</h2>
+        <div class="mt-5 space-y-3">
+          {industries.map((ind, i) => (
+            <a href={`/industries/${ind.slug}/`} class="card card-hover group flex items-center gap-4 p-5" data-reveal style={`--reveal-delay:${i * 60}ms`}>
+              <span class="rounded-xl bg-mist p-2.5 text-navy transition-colors group-hover:bg-accent group-hover:text-white"><Icon name={ind.icon} size={19} /></span>
+              <span class="flex-1">
+                <span class="block text-[15px] font-semibold text-navy">{ind.name}</span>
+                <span class="text-[13px] text-steel">{ind.oneLiner.split('.')[0]}.</span>
+              </span>
+              <Icon name="arrow-right" size={15} class="text-accent-600" />
+            </a>
+          ))}
+        </div>
+        <h2 class="mt-9 font-display text-[20px] font-semibold tracking-tight text-navy" data-reveal>Popular services</h2>
+        <ul class="mt-4 grid grid-cols-2 gap-x-4 gap-y-2.5">
+          {topServices.map((s) => (
+            <li><a href={`/services/${s.slug}/`} class="flex items-center gap-2 text-[14px] font-medium text-accent-600 hover:text-accent"><Icon name="check" size={13} /> {s.name}</a></li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  {l.faqs.length > 0 && (
+    <section class="mx-auto max-w-4xl px-5 pb-16 lg:pb-24">
+      <h2 class="font-display text-[26px] font-semibold tracking-tight text-navy" data-reveal>{l.city} FAQs</h2>
+      <FAQ items={l.faqs} class="mt-7" withSchema />
+    </section>
+  )}
+
+  <CTABand title={`Ready for clean books in ${l.city}?`} />
+</Base>

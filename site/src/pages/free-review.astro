@@ -1,0 +1,69 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { BUSINESS } from '../config';
+
+const checks = [
+  'Every bank & credit card account reconciled',
+  'No mystery balances in Undeposited Funds',
+  'AR aging: who owes you, and for how long',
+  'AP under control — no surprise bills',
+  'Sales tax filings current and accurate',
+  'Payroll liabilities matching filings',
+  'Chart of accounts that matches how you operate',
+  'P&L you actually review monthly',
+];
+---
+<Base
+  title="Free Texas Small Business Financial Health Checklist | Balance Bridge"
+  description="Download the free 20-point checklist Texas business owners use to find out if their books would survive a loan application, audit, or sale."
+>
+  <section class="relative overflow-hidden bg-navy">
+    <div class="arc-glow absolute inset-0" aria-hidden="true"></div>
+    <div class="relative mx-auto grid max-w-7xl gap-14 px-5 py-16 lg:grid-cols-2 lg:px-8 lg:py-24">
+      <div>
+        <p class="eyebrow-dark" data-reveal>Free download</p>
+        <h1 class="mt-4 font-display text-4xl font-semibold tracking-tight text-white md:text-[44px] md:leading-[1.1]" data-reveal style="--reveal-delay:70ms">The Texas Small Business Financial Health Checklist</h1>
+        <p class="mt-5 max-w-lg text-[17px] leading-relaxed text-steel-400" data-reveal style="--reveal-delay:140ms">
+          20 checks that reveal — in about 15 minutes — whether your books would survive a loan application, a tax audit, or a serious buyer. Written for owners, not accountants.
+        </p>
+        <ul class="mt-8 space-y-3" data-reveal style="--reveal-delay:200ms">
+          {checks.slice(0, 5).map((c) => (
+            <li class="flex items-start gap-3 text-[15px] text-white/85">
+              <span class="mt-0.5 shrink-0 rounded-full bg-accent/20 p-1 text-accent-400"><Icon name="check" size={13} /></span>
+              {c}
+            </li>
+          ))}
+          <li class="pl-9 text-[14px] italic text-steel-400">…and 15 more checks inside.</li>
+        </ul>
+      </div>
+
+      <div class="flex items-start justify-center">
+        <form class="card w-full max-w-md space-y-5 p-8 lg:p-9" method="POST" action="/api/leads">
+          <h2 class="font-display text-[21px] font-semibold text-navy">Send me the checklist</h2>
+          <input type="hidden" name="form" value="lead-magnet" />
+          <input type="text" name="website" class="hidden" tabindex="-1" autocomplete="off" aria-hidden="true" />
+          <div>
+            <label for="lm-name" class="mb-1.5 block text-[13.5px] font-semibold text-navy">First name *</label>
+            <input id="lm-name" name="name" type="text" required class="w-full rounded-xl border-0 bg-mist px-4 py-3 text-[15px] text-navy ring-1 ring-navy/10 focus:ring-2 focus:ring-accent" />
+          </div>
+          <div>
+            <label for="lm-email" class="mb-1.5 block text-[13.5px] font-semibold text-navy">Email *</label>
+            <input id="lm-email" name="email" type="email" required class="w-full rounded-xl border-0 bg-mist px-4 py-3 text-[15px] text-navy ring-1 ring-navy/10 focus:ring-2 focus:ring-accent" />
+          </div>
+          <button type="submit" class="btn-primary w-full">Email me the checklist <Icon name="arrow-right" size={16} /></button>
+          <p class="text-center text-[12.5px] leading-relaxed text-steel">One useful email per month after that, unsubscribe anytime. We never sell or share your address.</p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-4xl px-5 py-16 text-center lg:py-20">
+    <h2 class="font-display text-[26px] font-semibold tracking-tight text-navy" data-reveal>Failed more than three checks?</h2>
+    <p class="mx-auto mt-3.5 max-w-xl text-[15.5px] leading-relaxed text-steel" data-reveal style="--reveal-delay:70ms">
+      That's normal — and fixable. Book a free consultation and we'll walk through exactly what it takes to get every box checked, whether you do it yourself or we do it for you.
+    </p>
+    <a href="/contact/" class="btn-primary mt-7" data-reveal style="--reveal-delay:140ms">Book a free consultation</a>
+    <p class="mt-4 text-[13px] text-steel-400">{BUSINESS.replyPromise}</p>
+  </section>
+</Base>

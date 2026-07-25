@@ -1,0 +1,27 @@
+---
+import Icon from './Icon.astro';
+import { BUSINESS, CTA } from '../config';
+interface Props {
+  title?: string;
+  sub?: string;
+}
+const {
+  title = 'Ready to stop worrying about your books?',
+  sub = `Book a free, no-pressure consultation. We'll look at where your books stand and tell you exactly what it would take to get them working for you — even if you don't hire us.`,
+} = Astro.props;
+---
+<section class="relative overflow-hidden bg-navy">
+  <div class="arc-glow absolute inset-0" aria-hidden="true"></div>
+  <svg class="absolute -top-10 left-1/2 -translate-x-1/2 opacity-20" width="900" height="220" viewBox="0 0 900 220" fill="none" aria-hidden="true">
+    <path d="M40 220 Q450 -60 860 220" stroke="#34D399" stroke-width="2" />
+  </svg>
+  <div class="relative mx-auto max-w-4xl px-5 py-20 text-center lg:py-24">
+    <h2 class="font-display text-3xl font-semibold tracking-tight text-white md:text-4xl" data-reveal>{title}</h2>
+    <p class="mx-auto mt-4 max-w-2xl text-[16.5px] leading-relaxed text-steel-400" data-reveal style="--reveal-delay:80ms">{sub}</p>
+    <div class="mt-8 flex flex-col items-center justify-center gap-3.5 sm:flex-row" data-reveal style="--reveal-delay:160ms">
+      <a href={CTA.primaryHref} class="btn-primary w-full sm:w-auto">{CTA.primary} <Icon name="arrow-right" size={17} /></a>
+      <a href={BUSINESS.phoneHref} class="btn-ghost-dark w-full sm:w-auto"><Icon name="phone" size={16} /> {BUSINESS.phone}</a>
+    </div>
+    <p class="mt-5 text-[13.5px] text-steel-400">{BUSINESS.replyPromise} · No commitment required</p>
+  </div>
+</section>

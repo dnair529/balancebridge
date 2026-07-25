@@ -1,0 +1,19 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { BUSINESS } from '../config';
+---
+<Base title="Thanks — We'll Be In Touch | Balance Bridge Financial" description="We received your message and will reply within one business day." noIndex>
+  <section class="relative overflow-hidden bg-navy">
+    <div class="arc-glow absolute inset-0" aria-hidden="true"></div>
+    <div class="relative mx-auto flex min-h-[62vh] max-w-3xl flex-col items-center justify-center px-5 py-24 text-center">
+      <span class="rounded-2xl bg-accent/15 p-4 text-accent-400"><Icon name="check" size={34} /></span>
+      <h1 class="mt-6 font-display text-3xl font-semibold text-white md:text-4xl">Got it — you're on our desk</h1>
+      <p class="mt-4 max-w-md text-[16px] leading-relaxed text-steel-400">{BUSINESS.replyPromise}. If it's urgent, call us at <a href={BUSINESS.phoneHref} class="font-semibold text-accent-400">{BUSINESS.phone}</a>.</p>
+      <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+        <a href="/resources/" class="btn-primary">Browse our guides <Icon name="arrow-right" size={16} /></a>
+        <a href="/" class="btn-ghost-dark">Back to home</a>
+      </div>
+    </div>
+  </section>
+</Base>

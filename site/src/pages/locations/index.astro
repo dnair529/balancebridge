@@ -1,0 +1,40 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import CTABand from '../../components/CTABand.astro';
+import { LOCATIONS } from '../../data/locations';
+---
+<Base
+  title="Texas Service Areas | Bookkeeping Across the State | Balance Bridge"
+  description="Remote-first bookkeeping for businesses in Dallas–Fort Worth, Houston, Austin, San Antonio, El Paso, and everywhere in between."
+>
+  <section class="relative overflow-hidden bg-navy">
+    <div class="arc-glow absolute inset-0" aria-hidden="true"></div>
+    <div class="relative mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-24">
+      <p class="eyebrow-dark" data-reveal>Service area</p>
+      <h1 class="mt-4 max-w-3xl font-display text-4xl font-semibold tracking-tight text-white md:text-5xl" data-reveal style="--reveal-delay:70ms">Serving businesses across Texas</h1>
+      <p class="mt-5 max-w-2xl text-[17px] leading-relaxed text-steel-400" data-reveal style="--reveal-delay:140ms">
+        We're remote-first by design: secure portal, video calls, and same-day answers wherever you are in the state. These are the metros where we work most.
+      </p>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-24">
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {LOCATIONS.map((l, i) => (
+        <a href={`/locations/${l.slug}/`} class="card card-hover group p-8" data-reveal style={`--reveal-delay:${(i % 3) * 70}ms`}>
+          <span class="inline-flex rounded-xl bg-mist p-3 text-navy transition-colors group-hover:bg-accent group-hover:text-white"><Icon name="map-pin" size={22} /></span>
+          <h2 class="mt-4 font-display text-xl font-semibold text-navy">{l.city}</h2>
+          <p class="mt-2 text-[14.5px] leading-relaxed text-steel">{l.heroSub}</p>
+          <span class="mt-4 flex items-center gap-1.5 text-[14px] font-semibold text-accent-600">Bookkeeping in {l.city} <Icon name="arrow-right" size={14} class="transition-transform group-hover:translate-x-0.5" /></span>
+        </a>
+      ))}
+      <div class="card flex flex-col justify-center bg-navy p-8">
+        <h2 class="font-display text-xl font-semibold text-white">Somewhere else in Texas?</h2>
+        <p class="mt-2 text-[14.5px] leading-relaxed text-steel-400">Lubbock, Corpus Christi, McAllen, Waco, Tyler — remote-first means we're already local to you.</p>
+        <a href="/contact/" class="btn-primary mt-5 w-fit">Talk to us</a>
+      </div>
+    </div>
+  </section>
+  <CTABand />
+</Base>

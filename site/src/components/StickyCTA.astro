@@ -1,0 +1,32 @@
+---
+import Icon from './Icon.astro';
+import { BUSINESS, CTA } from '../config';
+---
+<div
+  id="sticky-cta"
+  class="fixed inset-x-0 bottom-0 z-40 translate-y-full border-t border-navy/10 bg-white/95 px-4 py-3 shadow-[0_-8px_30px_-12px_rgba(11,31,51,0.25)] backdrop-blur transition-transform duration-300 lg:hidden"
+  aria-hidden="true"
+>
+  <div class="mx-auto flex max-w-lg items-center gap-3">
+    <a href={CTA.primaryHref} class="btn-primary min-h-[48px] flex-1 !py-3 text-[15px]">{CTA.primary}</a>
+    <a href={BUSINESS.phoneHref} class="flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl ring-1 ring-navy/20 text-navy" aria-label={`Call ${BUSINESS.phone}`}>
+      <Icon name="phone" size={19} />
+    </a>
+  </div>
+</div>
+
+<script>
+  const bar = document.getElementById('sticky-cta');
+  let shown = false;
+  const onScroll = () => {
+    const scrolled = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight || 1);
+    const nearBottom = window.scrollY + window.innerHeight > document.documentElement.scrollHeight - 420;
+    const show = scrolled > 0.45 && !nearBottom;
+    if (show !== shown) {
+      shown = show;
+      bar?.classList.toggle('translate-y-full', !show);
+      bar?.setAttribute('aria-hidden', String(!show));
+    }
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+</script>

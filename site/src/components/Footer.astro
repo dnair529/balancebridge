@@ -1,0 +1,94 @@
+---
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import { BUSINESS } from '../config';
+import { SERVICES } from '../data/services';
+import { LOCATIONS } from '../data/locations';
+
+const year = new Date().getFullYear();
+const company = [
+  { label: 'About us', href: '/about/' },
+  { label: 'Pricing', href: '/pricing/' },
+  { label: 'Industries', href: '/industries/' },
+  { label: 'FAQs', href: '/faq/' },
+  { label: 'Contact', href: '/contact/' },
+  { label: 'Client portal', href: BUSINESS.portalUrl },
+];
+const resources = [
+  { label: 'Blog', href: '/resources/' },
+  { label: 'Free financial health checklist', href: '/free-review/' },
+  { label: 'Bookkeeping cost guide', href: '/resources/how-much-does-bookkeeping-cost-texas/' },
+  { label: 'QuickBooks cleanup guide', href: '/resources/quickbooks-cleanup-guide/' },
+  { label: 'Texas franchise tax guide', href: '/resources/texas-franchise-tax-small-business-guide/' },
+];
+---
+<footer class="bg-ink text-white">
+  <div class="mx-auto max-w-7xl px-5 py-16 lg:px-8">
+    <div class="grid gap-12 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
+      <div>
+        <a href="/" aria-label="Balance Bridge Financial — home"><Logo variant="light" /></a>
+        <p class="mt-5 max-w-xs text-[14.5px] leading-relaxed text-steel-400">
+          Modern bookkeeping and accounting for Texas small businesses. Clean books, clear reports, and a team that answers.
+        </p>
+        <div class="mt-6 flex flex-wrap gap-2">
+          {BUSINESS.certifications.map((c) => (
+            <span class="rounded-full bg-white/6 px-3 py-1.5 text-[12px] font-medium text-white/70 ring-1 ring-white/12">{c}</span>
+          ))}
+        </div>
+      </div>
+
+      <nav aria-label="Services">
+        <h3 class="text-[13px] font-semibold uppercase tracking-[0.14em] text-steel-400">Services</h3>
+        <ul class="mt-4 space-y-2.5">
+          {SERVICES.slice(0, 8).map((s) => (
+            <li><a href={`/services/${s.slug}/`} class="text-[14.5px] text-white/80 transition-colors hover:text-accent-400">{s.name}</a></li>
+          ))}
+          <li><a href="/services/" class="text-[14.5px] font-medium text-accent-400 hover:text-accent-400/80">All services →</a></li>
+        </ul>
+      </nav>
+
+      <nav aria-label="Company and resources">
+        <h3 class="text-[13px] font-semibold uppercase tracking-[0.14em] text-steel-400">Company</h3>
+        <ul class="mt-4 space-y-2.5">
+          {company.map((l) => (
+            <li><a href={l.href} class="text-[14.5px] text-white/80 transition-colors hover:text-accent-400">{l.label}</a></li>
+          ))}
+        </ul>
+        <h3 class="mt-8 text-[13px] font-semibold uppercase tracking-[0.14em] text-steel-400">Resources</h3>
+        <ul class="mt-4 space-y-2.5">
+          {resources.map((l) => (
+            <li><a href={l.href} class="text-[14.5px] text-white/80 transition-colors hover:text-accent-400">{l.label}</a></li>
+          ))}
+        </ul>
+      </nav>
+
+      <div>
+        <h3 class="text-[13px] font-semibold uppercase tracking-[0.14em] text-steel-400">Get in touch</h3>
+        <ul class="mt-4 space-y-3.5 text-[14.5px]">
+          <li><a href={BUSINESS.phoneHref} class="flex items-center gap-2.5 text-white/80 hover:text-accent-400"><Icon name="phone" size={16} class="text-accent-400" /> {BUSINESS.phone}</a></li>
+          <li><a href={`mailto:${BUSINESS.email}`} class="flex items-center gap-2.5 text-white/80 hover:text-accent-400"><Icon name="mail" size={16} class="text-accent-400" /> {BUSINESS.email}</a></li>
+          <li class="flex items-start gap-2.5 text-white/80"><Icon name="map-pin" size={16} class="mt-1 shrink-0 text-accent-400" /> Serving all of Texas, remote-first</li>
+          <li class="flex items-center gap-2.5 text-white/80"><Icon name="clock" size={16} class="text-accent-400" /> {BUSINESS.hours}</li>
+        </ul>
+        <h3 class="mt-8 text-[13px] font-semibold uppercase tracking-[0.14em] text-steel-400">Service area</h3>
+        <p class="mt-3 text-[13.5px] leading-relaxed text-steel-400">
+          {LOCATIONS.map((l, i) => (
+            <>
+              <a href={`/locations/${l.slug}/`} class="text-white/70 hover:text-accent-400">{l.city}</a>{i < LOCATIONS.length - 1 ? ' · ' : ''}
+            </>
+          ))}
+          {' '}· and everywhere in between
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-14 flex flex-col gap-4 border-t border-white/10 pt-7 text-[13px] text-steel-400 md:flex-row md:items-center md:justify-between">
+      <p>© {year} {BUSINESS.legalName}. All rights reserved.</p>
+      <div class="flex gap-6">
+        <a href="/privacy/" class="hover:text-white/80">Privacy policy</a>
+        <a href="/terms/" class="hover:text-white/80">Terms of service</a>
+        <a href="/sitemap-index.xml" class="hover:text-white/80">Sitemap</a>
+      </div>
+    </div>
+  </div>
+</footer>

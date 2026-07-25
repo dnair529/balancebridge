@@ -1,0 +1,81 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import CTABand from '../../components/CTABand.astro';
+import { getCollection } from 'astro:content';
+import { CTA } from '../../config';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+const categories = [...new Set(posts.map((p) => p.data.category))].sort();
+const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+const readTime = (body: string | undefined) => Math.max(3, Math.round((body?.split(/\s+/).length ?? 800) / 220));
+---
+<Base
+  title="Resources & Guides for Texas Small Businesses | Balance Bridge"
+  description="Plain-English guides on bookkeeping, QuickBooks, cash flow, and Texas taxes — written for small business owners, not accountants."
+>
+  <section class="relative overflow-hidden bg-navy">
+    <div class="arc-glow absolute inset-0" aria-hidden="true"></div>
+    <div class="relative mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-20">
+      <p class="eyebrow-dark" data-reveal>Resources</p>
+      <h1 class="mt-4 max-w-3xl font-display text-4xl font-semibold tracking-tight text-white md:text-5xl" data-reveal style="--reveal-delay:70ms">Guides for owners who want to understand their numbers</h1>
+      <p class="mt-5 max-w-2xl text-[17px] leading-relaxed text-steel-400" data-reveal style="--reveal-delay:140ms">No jargon, no filler — practical answers on bookkeeping, QuickBooks, cash flow, and running a business in Texas.</p>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-7xl px-5 py-14 lg:px-8 lg:py-20">
+    <div class="flex flex-wrap gap-2" role="group" aria-label="Filter by category">
+      <button class="cat-pill rounded-full bg-navy px-4 py-2 text-[13.5px] font-semibold text-white" data-cat="all">All posts</button>
+      {categories.map((c) => (
+        <button class="cat-pill rounded-full bg-white px-4 py-2 text-[13.5px] font-semibold text-navy ring-1 ring-navy/12 transition-colors hover:ring-accent" data-cat={c}>{c}</button>
+      ))}
+    </div>
+
+    <div id="post-grid" class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      {posts.map((p, i) => (
+        <a href={`/resources/${p.id}/`} class="post-card card card-hover group flex flex-col p-7" data-category={p.data.category} data-reveal style={`--reveal-delay:${(i % 3) * 60}ms`}>
+          <div class="flex items-center gap-3 text-[12.5px] font-semibold">
+            <span class="rounded-full bg-accent/10 px-3 py-1 text-accent-600">{p.data.category}</span>
+            <span class="text-steel-400">{readTime(p.body)} min read</span>
+          </div>
+          <h2 class="mt-4 font-display text-[18px] font-semibold leading-snug text-navy group-hover:text-accent-600">{p.data.title}</h2>
+          <p class="mt-2.5 flex-1 text-[14px] leading-relaxed text-steel">{p.data.description}</p>
+          <p class="mt-5 text-[12.5px] font-medium text-steel-400">{fmt(p.data.pubDate)} · {p.data.author}</p>
+        </a>
+      ))}
+    </div>
+
+    <div class="card mt-12 flex flex-col items-center gap-5 bg-navy p-9 text-center md:flex-row md:text-left">
+      <div class="flex-1">
+        <h2 class="font-display text-xl font-semibold text-white">The Texas Small Business Financial Health Checklist</h2>
+        <p class="mt-2 text-[14.5px] text-steel-400">20 checks, 15 minutes, and you'll know exactly where your books stand.</p>
+      </div>
+      <a href={CTA.leadMagnetHref} class="btn-primary shrink-0">Get the free checklist <Icon name="arrow-right" size={15} /></a>
+    </div>
+  </section>
+
+  <CTABand />
+
+  <script>
+    const pills = document.querySelectorAll<HTMLButtonElement>('.cat-pill');
+    const cards = document.querySelectorAll<HTMLElement>('.post-card');
+    pills.forEach((pill) => {
+      pill.addEventListener('click', () => {
+        pills.forEach((p) => {
+          const active = p === pill;
+          p.classList.toggle('bg-navy', active);
+          p.classList.toggle('text-white', active);
+          p.classList.toggle('bg-white', !active);
+          p.classList.toggle('text-navy', !active);
+          p.classList.toggle('ring-1', !active);
+        });
+        const cat = pill.dataset.cat;
+        cards.forEach((c) => {
+          c.style.display = cat === 'all' || c.dataset.category === cat ? '' : 'none';
+        });
+      });
+    });
+  </script>
+</Base>

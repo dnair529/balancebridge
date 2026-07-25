@@ -1,0 +1,18 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+---
+<Base title="Page Not Found | Balance Bridge Financial" description="That page doesn't balance. Let's get you back on track." noIndex>
+  <section class="relative overflow-hidden bg-navy">
+    <div class="arc-glow absolute inset-0" aria-hidden="true"></div>
+    <div class="relative mx-auto flex min-h-[62vh] max-w-3xl flex-col items-center justify-center px-5 py-24 text-center">
+      <p class="font-display text-[88px] font-semibold leading-none text-white/15">404</p>
+      <h1 class="mt-4 font-display text-3xl font-semibold text-white md:text-4xl">This page doesn't balance</h1>
+      <p class="mt-4 max-w-md text-[16px] leading-relaxed text-steel-400">The page you're looking for moved, was renamed, or never made it into the ledger. Let's reconcile that.</p>
+      <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+        <a href="/" class="btn-primary">Back to home <Icon name="arrow-right" size={16} /></a>
+        <a href="/contact/" class="btn-ghost-dark">Contact us</a>
+      </div>
+    </div>
+  </section>
+</Base>

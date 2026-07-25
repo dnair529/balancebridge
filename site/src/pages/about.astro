@@ -1,0 +1,86 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import CTABand from '../components/CTABand.astro';
+import { BUSINESS } from '../config';
+import { CASE_STUDIES } from '../data/social-proof';
+
+const values = [
+  { icon: 'clock', title: 'On time, every time', text: `Books closed on the date we promised — not "when we get to it." Deadlines are the product.` },
+  { icon: 'message', title: 'Plain English', text: `If you need a glossary to read our reports, we've failed. We translate accounting into decisions.` },
+  { icon: 'shield', title: 'Guard the downside', text: `Your data is encrypted, access is least-privilege, and we flag risks before they become expensive.` },
+  { icon: 'trending', title: 'Numbers that move you forward', text: `Clean books are table stakes. The point is knowing your margins, your runway, and your next move.` },
+];
+---
+<Base
+  title="About Balance Bridge Financial | Texas Bookkeeping Firm"
+  description="Meet Balance Bridge Financial — a modern, remote-first bookkeeping and accounting team serving small businesses across Texas."
+>
+  <section class="relative overflow-hidden bg-navy">
+    <div class="arc-glow absolute inset-0" aria-hidden="true"></div>
+    <div class="relative mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-24">
+      <p class="eyebrow-dark" data-reveal>About us</p>
+      <h1 class="mt-4 max-w-3xl font-display text-4xl font-semibold tracking-tight text-white md:text-5xl" data-reveal style="--reveal-delay:70ms">The bridge between your books and your business</h1>
+      <p class="mt-5 max-w-2xl text-[17px] leading-relaxed text-steel-400" data-reveal style="--reveal-delay:140ms">
+        Balance Bridge exists because too many good Texas businesses run on bad numbers. We give owner-run companies the financial clarity big companies take for granted — without the big-company overhead.
+      </p>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-24">
+    <div class="grid gap-14 lg:grid-cols-2">
+      <div>
+        <p class="eyebrow" data-reveal>Our story</p>
+        <h2 class="mt-3 font-display text-[28px] font-semibold tracking-tight text-navy" data-reveal style="--reveal-delay:60ms">Built for how small businesses actually run</h2>
+        <div class="mt-6 space-y-4 text-[15.5px] leading-relaxed text-steel">
+          <p data-reveal>Most bookkeeping goes wrong the same way: a part-timer or a big firm's smallest account, books that lag reality by months, and reports nobody reads. Meanwhile the owner makes real decisions — hiring, pricing, borrowing — with no real numbers.</p>
+          <p data-reveal>We built Balance Bridge to close that gap. A senior-led, remote-first team, modern tools, and one operating promise: <strong class="text-navy">your books close on schedule, and you understand every line.</strong></p>
+          <p data-reveal>Today we serve owner-run businesses across Texas — from {BUSINESS.cities[0]} to {BUSINESS.cities[4]} — as the accounting department they'd build themselves if they had the time.</p>
+        </div>
+        <div class="mt-8 flex flex-wrap gap-2" data-reveal>
+          {BUSINESS.certifications.map((c) => (
+            <span class="rounded-full bg-mist px-3.5 py-1.5 text-[12.5px] font-semibold text-navy/75 ring-1 ring-navy/10">{c}</span>
+          ))}
+        </div>
+      </div>
+      <div class="grid content-start gap-5 sm:grid-cols-2">
+        {values.map((v, i) => (
+          <div class="card p-6" data-reveal style={`--reveal-delay:${i * 70}ms`}>
+            <span class="inline-flex rounded-xl bg-mist p-2.5 text-navy"><Icon name={v.icon as any} size={20} /></span>
+            <h3 class="mt-4 font-display text-[16px] font-semibold text-navy">{v.title}</h3>
+            <p class="mt-2 text-[13.5px] leading-relaxed text-steel">{v.text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-mist/60 py-16 lg:py-24">
+    <div class="mx-auto max-w-7xl px-5 lg:px-8">
+      <div class="max-w-2xl">
+        <p class="eyebrow" data-reveal>Results</p>
+        <h2 class="mt-3 font-display text-[28px] font-semibold tracking-tight text-navy" data-reveal style="--reveal-delay:60ms">What clean books actually change</h2>
+      </div>
+      <div class="mt-10 grid gap-5 lg:grid-cols-3">
+        {CASE_STUDIES.map((cs, i) => (
+          <article class="card flex flex-col p-8" data-reveal style={`--reveal-delay:${i * 80}ms`}>
+            <p class="eyebrow !text-[11.5px]">{cs.industry}</p>
+            <h3 class="mt-3 font-display text-[18px] font-semibold leading-snug text-navy">{cs.title}</h3>
+            <p class="mt-3 text-[14px] leading-relaxed text-steel"><strong class="font-semibold text-navy">The challenge:</strong> {cs.challenge}</p>
+            <ul class="mt-4 flex-1 space-y-2">
+              {cs.results.map((r) => (
+                <li class="flex items-start gap-2.5 text-[14px] leading-relaxed text-navy/85">
+                  <span class="mt-0.5 shrink-0 rounded-full bg-accent/15 p-1 text-accent-600"><Icon name="check" size={11} /></span>
+                  {r}
+                </li>
+              ))}
+            </ul>
+          </article>
+        ))}
+      </div>
+      <p class="mt-6 text-center text-[12px] text-steel-400">Illustrative composite engagements; details anonymized and representative.</p>
+    </div>
+  </section>
+
+  <CTABand title="Want a team like this on your books?" />
+</Base>

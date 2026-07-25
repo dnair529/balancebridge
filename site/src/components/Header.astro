@@ -1,0 +1,109 @@
+---
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import { BUSINESS, CTA } from '../config';
+import { SERVICES } from '../data/services';
+import { INDUSTRIES } from '../data/industries';
+
+const nav = [
+  { label: 'Pricing', href: '/pricing/' },
+  { label: 'Resources', href: '/resources/' },
+  { label: 'About', href: '/about/' },
+  { label: 'Contact', href: '/contact/' },
+];
+const path = Astro.url.pathname;
+const isActive = (href: string) => path.startsWith(href);
+---
+<header class="sticky top-0 z-50 border-b border-navy/8 bg-paper/85 backdrop-blur-lg">
+  <div class="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 lg:px-8">
+    <a href="/" aria-label="Balance Bridge Financial — home" class="shrink-0">
+      <Logo variant="dark" />
+    </a>
+
+    <nav class="hidden items-center gap-1 lg:flex" aria-label="Main">
+      <!-- Services dropdown -->
+      <div class="group relative">
+        <a href="/services/" class={`flex items-center gap-1 rounded-lg px-3.5 py-2 text-[15px] font-medium transition-colors hover:text-accent-600 ${isActive('/services') ? 'text-accent-600' : 'text-navy/80'}`}>
+          Services <Icon name="chevron-down" size={15} class="mt-px opacity-60" />
+        </a>
+        <div class="invisible absolute left-0 top-full w-[560px] translate-y-1 opacity-0 transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+          <div class="mt-2 grid grid-cols-2 gap-0.5 rounded-2xl bg-white p-2.5 shadow-[0_24px_60px_-20px_rgba(11,31,51,0.35)] ring-1 ring-navy/8">
+            {SERVICES.map((s) => (
+              <a href={`/services/${s.slug}/`} class="flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-mist">
+                <Icon name={s.icon} size={18} class="mt-0.5 shrink-0 text-accent-600" />
+                <span>
+                  <span class="block text-[14px] font-semibold text-navy">{s.name}</span>
+                  <span class="mt-0.5 block text-[12.5px] leading-snug text-steel">{s.oneLiner.split('.')[0]}.</span>
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <!-- Industries dropdown -->
+      <div class="group relative">
+        <a href="/industries/" class={`flex items-center gap-1 rounded-lg px-3.5 py-2 text-[15px] font-medium transition-colors hover:text-accent-600 ${isActive('/industries') ? 'text-accent-600' : 'text-navy/80'}`}>
+          Industries <Icon name="chevron-down" size={15} class="mt-px opacity-60" />
+        </a>
+        <div class="invisible absolute left-0 top-full w-[300px] translate-y-1 opacity-0 transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+          <div class="mt-2 flex flex-col gap-0.5 rounded-2xl bg-white p-2.5 shadow-[0_24px_60px_-20px_rgba(11,31,51,0.35)] ring-1 ring-navy/8">
+            {INDUSTRIES.map((i) => (
+              <a href={`/industries/${i.slug}/`} class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-medium text-navy transition-colors hover:bg-mist">
+                <Icon name={i.icon} size={17} class="text-accent-600" /> {i.name}
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {nav.map((n) => (
+        <a href={n.href} class={`rounded-lg px-3.5 py-2 text-[15px] font-medium transition-colors hover:text-accent-600 ${isActive(n.href) ? 'text-accent-600' : 'text-navy/80'}`}>{n.label}</a>
+      ))}
+    </nav>
+
+    <div class="hidden items-center gap-3 lg:flex">
+      <a href={BUSINESS.portalUrl} class="rounded-lg px-3.5 py-2 text-[15px] font-medium text-navy/70 ring-1 ring-navy/15 transition-all hover:ring-navy/35 hover:text-navy">Client portal</a>
+      <a href={CTA.primaryHref} class="btn-primary !px-5 !py-2.5 text-[14.5px]">{CTA.primary}</a>
+    </div>
+
+    <!-- Mobile toggle -->
+    <button id="nav-toggle" class="lg:hidden rounded-lg p-2 text-navy" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu">
+      <Icon name="menu" size={24} class="nav-open-icon" />
+      <Icon name="x" size={24} class="nav-close-icon hidden" />
+    </button>
+  </div>
+
+  <!-- Mobile nav -->
+  <div id="mobile-nav" class="hidden border-t border-navy/8 bg-paper lg:hidden">
+    <nav class="mx-auto max-w-7xl space-y-1 px-5 py-4" aria-label="Mobile">
+      <a href="/services/" class="block rounded-lg px-3 py-2.5 text-[15px] font-semibold text-navy">All services</a>
+      <div class="grid grid-cols-2 gap-x-2 pb-2">
+        {SERVICES.map((s) => (
+          <a href={`/services/${s.slug}/`} class="block rounded-lg px-3 py-2 text-[13.5px] text-steel">{s.name}</a>
+        ))}
+      </div>
+      <a href="/industries/" class="block rounded-lg px-3 py-2.5 text-[15px] font-semibold text-navy">Industries</a>
+      {nav.map((n) => (
+        <a href={n.href} class="block rounded-lg px-3 py-2.5 text-[15px] font-semibold text-navy">{n.label}</a>
+      ))}
+      <div class="flex flex-col gap-2.5 pt-3">
+        <a href={CTA.primaryHref} class="btn-primary w-full">{CTA.primary}</a>
+        <a href={BUSINESS.portalUrl} class="btn-ghost-light w-full">Client portal</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<script>
+  const toggle = document.getElementById('nav-toggle');
+  const nav = document.getElementById('mobile-nav');
+  toggle?.addEventListener('click', () => {
+    const open = nav?.classList.toggle('hidden') === false;
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    toggle.querySelector('.nav-open-icon')?.classList.toggle('hidden', open);
+    toggle.querySelector('.nav-close-icon')?.classList.toggle('hidden', !open);
+    document.body.classList.toggle('overflow-hidden', open);
+  });
+</script>

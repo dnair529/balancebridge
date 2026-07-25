@@ -1,0 +1,132 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import FAQ from '../components/FAQ.astro';
+import CTABand from '../components/CTABand.astro';
+import { TIERS, ADDONS } from '../data/pricing';
+import { FAQS } from '../data/faqs';
+import { CTA } from '../config';
+
+const pricingFaqs = FAQS.filter((f) => f.category === 'Pricing');
+---
+<Base
+  title="Bookkeeping Pricing for Texas Businesses | Balance Bridge"
+  description="Transparent flat-rate bookkeeping plans from $395/month. No hourly surprises, no long-term contracts. Get a custom quote after a free books review."
+>
+  <section class="relative overflow-hidden bg-navy">
+    <div class="arc-glow absolute inset-0" aria-hidden="true"></div>
+    <div class="relative mx-auto max-w-7xl px-5 py-16 text-center lg:px-8 lg:py-24">
+      <p class="eyebrow-dark" data-reveal>Pricing</p>
+      <h1 class="mx-auto mt-4 max-w-3xl font-display text-4xl font-semibold tracking-tight text-white md:text-5xl" data-reveal style="--reveal-delay:70ms">Flat monthly pricing. No hourly surprises.</h1>
+      <p class="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-steel-400" data-reveal style="--reveal-delay:140ms">
+        Every engagement starts with a free books review, then a fixed quote based on your actual volume and complexity. These starting points cover most Texas small businesses.
+      </p>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-20">
+    <div class="grid gap-6 lg:grid-cols-3">
+      {TIERS.map((t, i) => (
+        <div class={`card relative flex flex-col p-8 ${t.popular ? 'ring-2 ring-accent shadow-[0_24px_60px_-24px_rgba(16,185,129,0.4)] lg:-translate-y-3' : ''}`} data-reveal style={`--reveal-delay:${i * 80}ms`}>
+          {t.popular && <span class="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-accent px-4 py-1 text-[12px] font-bold uppercase tracking-wider text-ink">Most popular</span>}
+          <h2 class="font-display text-xl font-semibold text-navy">{t.name}</h2>
+          <p class="mt-1.5 text-[14px] text-steel">{t.tagline}</p>
+          <p class="mt-6 flex items-baseline gap-1.5">
+            <span class="text-[13px] font-medium text-steel">from</span>
+            <span class="tabular font-display text-[44px] font-semibold leading-none text-navy">${t.priceFrom.toLocaleString('en-US')}</span>
+            <span class="text-[14px] text-steel">/month</span>
+          </p>
+          <p class="mt-4 rounded-lg bg-mist px-3.5 py-2.5 text-[13.5px] leading-snug text-navy/80"><strong class="font-semibold">Best for:</strong> {t.bestFor}</p>
+          <ul class="mt-6 flex-1 space-y-3">
+            {t.features.map((f) => (
+              <li class="flex items-start gap-2.5 text-[14.5px] leading-relaxed text-navy/85">
+                <span class="mt-0.5 shrink-0 rounded-full bg-accent/15 p-1 text-accent-600"><Icon name="check" size={12} /></span>
+                {f}
+              </li>
+            ))}
+          </ul>
+          <a href="#quote" class={`${t.popular ? 'btn-primary' : 'btn-ghost-light'} mt-8 w-full`}>{CTA.quote}</a>
+        </div>
+      ))}
+    </div>
+    <p class="mt-8 text-center text-[14px] text-steel" data-reveal>All plans: no long-term contract · cancel with 30 days' notice · price locked for 12 months once quoted.</p>
+  </section>
+
+  <section class="bg-mist/60 py-16 lg:py-20">
+    <div class="mx-auto max-w-7xl px-5 lg:px-8">
+      <h2 class="font-display text-[28px] font-semibold tracking-tight text-navy" data-reveal>One-time projects & add-ons</h2>
+      <div class="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {ADDONS.map((a, i) => (
+          <div class="card p-6" data-reveal style={`--reveal-delay:${i * 60}ms`}>
+            <h3 class="font-display text-[15.5px] font-semibold text-navy">{a.name}</h3>
+            <p class="tabular mt-2 text-[15px] font-semibold text-accent-600">{a.price}</p>
+            <p class="mt-2 text-[13.5px] leading-relaxed text-steel">{a.text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-4xl px-5 py-16 lg:py-20">
+    <h2 class="font-display text-[28px] font-semibold tracking-tight text-navy" data-reveal>Pricing questions, answered straight</h2>
+    <FAQ items={pricingFaqs} class="mt-8" withSchema />
+  </section>
+
+  <!-- ============ QUOTE FORM ============ -->
+  <section id="quote" class="relative overflow-hidden bg-navy py-16 lg:py-24">
+    <div class="arc-glow absolute inset-0" aria-hidden="true"></div>
+    <div class="relative mx-auto max-w-3xl px-5">
+      <h2 class="text-center font-display text-3xl font-semibold tracking-tight text-white" data-reveal>Get your custom quote</h2>
+      <p class="mx-auto mt-3.5 max-w-xl text-center text-[15.5px] leading-relaxed text-steel-400" data-reveal style="--reveal-delay:70ms">
+        Two minutes now, a fixed number within one business day. No obligation, no pressure, no spam.
+      </p>
+      <form class="card mt-9 space-y-5 p-8 lg:p-10" method="POST" action="/api/leads" data-reveal style="--reveal-delay:140ms">
+        <input type="hidden" name="form" value="quote" />
+        <input type="text" name="website" class="hidden" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <div class="grid gap-5 sm:grid-cols-2">
+          <div>
+            <label for="q-name" class="mb-1.5 block text-[13.5px] font-semibold text-navy">Your name *</label>
+            <input id="q-name" name="name" type="text" required autocomplete="name" class="w-full rounded-xl border-0 bg-mist px-4 py-3 text-[15px] text-navy ring-1 ring-navy/10 placeholder:text-steel-400 focus:ring-2 focus:ring-accent" placeholder="Jordan Rivera" />
+          </div>
+          <div>
+            <label for="q-email" class="mb-1.5 block text-[13.5px] font-semibold text-navy">Work email *</label>
+            <input id="q-email" name="email" type="email" required autocomplete="email" class="w-full rounded-xl border-0 bg-mist px-4 py-3 text-[15px] text-navy ring-1 ring-navy/10 placeholder:text-steel-400 focus:ring-2 focus:ring-accent" placeholder="you@company.com" />
+          </div>
+        </div>
+        <div class="grid gap-5 sm:grid-cols-2">
+          <div>
+            <label for="q-business" class="mb-1.5 block text-[13.5px] font-semibold text-navy">Business type *</label>
+            <select id="q-business" name="businessType" required class="w-full rounded-xl border-0 bg-mist px-4 py-3 text-[15px] text-navy ring-1 ring-navy/10 focus:ring-2 focus:ring-accent">
+              <option value="">Select one…</option>
+              <option>Construction / trades</option>
+              <option>Restaurant / hospitality</option>
+              <option>Medical / dental</option>
+              <option>Ecommerce / retail</option>
+              <option>Professional services</option>
+              <option>Real estate</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div>
+            <label for="q-revenue" class="mb-1.5 block text-[13.5px] font-semibold text-navy">Annual revenue (approx.)</label>
+            <select id="q-revenue" name="revenue" class="w-full rounded-xl border-0 bg-mist px-4 py-3 text-[15px] text-navy ring-1 ring-navy/10 focus:ring-2 focus:ring-accent">
+              <option value="">Prefer not to say</option>
+              <option>Under $250K</option>
+              <option>$250K – $1M</option>
+              <option>$1M – $5M</option>
+              <option>Over $5M</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label for="q-needs" class="mb-1.5 block text-[13.5px] font-semibold text-navy">What do you need help with? *</label>
+          <textarea id="q-needs" name="message" required rows="4" class="w-full rounded-xl border-0 bg-mist px-4 py-3 text-[15px] text-navy ring-1 ring-navy/10 placeholder:text-steel-400 focus:ring-2 focus:ring-accent" placeholder="e.g. We're 8 months behind on the books and need monthly bookkeeping going forward…"></textarea>
+        </div>
+        <button type="submit" class="btn-primary w-full">Send my quote request <Icon name="arrow-right" size={16} /></button>
+        <p class="text-center text-[12.5px] text-steel">We reply within 1 business day. Your info is never sold or shared.</p>
+      </form>
+    </div>
+  </section>
+
+  <CTABand title="Prefer to just talk it through?" sub="Book a free 20-minute consultation instead — we'll quote you live on the call." />
+</Base>

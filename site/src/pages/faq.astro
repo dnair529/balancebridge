@@ -1,0 +1,44 @@
+---
+import Base from '../layouts/Base.astro';
+import FAQ from '../components/FAQ.astro';
+import CTABand from '../components/CTABand.astro';
+import { FAQS } from '../data/faqs';
+
+const categories = [...new Set(FAQS.map((f) => f.category))];
+---
+<Base
+  title="Frequently Asked Questions | Balance Bridge Financial"
+  description="Answers on switching bookkeepers, pricing, security, the client portal, and how working with Balance Bridge actually works."
+>
+  <section class="relative overflow-hidden bg-navy">
+    <div class="arc-glow absolute inset-0" aria-hidden="true"></div>
+    <div class="relative mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-20">
+      <p class="eyebrow-dark" data-reveal>FAQs</p>
+      <h1 class="mt-4 max-w-3xl font-display text-4xl font-semibold tracking-tight text-white md:text-5xl" data-reveal style="--reveal-delay:70ms">Straight answers to fair questions</h1>
+      <p class="mt-5 max-w-2xl text-[17px] leading-relaxed text-steel-400" data-reveal style="--reveal-delay:140ms">If it's not covered here, <a href="/contact/" class="font-semibold text-accent-400 underline underline-offset-4">ask us directly</a> — we reply within one business day.</p>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-4xl px-5 py-14 lg:py-20">
+    {categories.map((cat) => (
+      <div class="mb-12">
+        <h2 class="font-display text-[22px] font-semibold tracking-tight text-navy" data-reveal>{cat}</h2>
+        <FAQ items={FAQS.filter((f) => f.category === cat)} class="mt-5" />
+      </div>
+    ))}
+  </section>
+  <CTABand />
+</Base>
+
+<script
+  type="application/ld+json"
+  set:html={JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: FAQS.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  })}
+/>
