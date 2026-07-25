@@ -78,8 +78,10 @@ if [[ "$ENV_NAME" == "uat" && ! -f "$ENV_DIR/.preview-password" ]]; then
   PREVIEW_PW=$(gen 16)
   printf '%s\n' "$PREVIEW_PW" > "$ENV_DIR/.preview-password"; chmod 600 "$ENV_DIR/.preview-password"
   HTPASSWD=$(docker run --rm httpd:2-alpine htpasswd -nbB preview "$PREVIEW_PW" | tr -d '\n')
-  # '$' must be doubled so compose does not treat it as interpolation
-  printf 'UAT_BASICAUTH=%s\n' "${HTPASSWD//$/$$}" >> "$ENV_DIR/.env"
+  # Every '$' in the bcrypt hash must be doubled or compose treats it as interpolation.
+  # (Do NOT use bash ${var//$/$$} here — bash expands $$ to the shell's PID.)
+  ESCAPED=$(printf '%s' "$HTPASSWD" | sed 's/[$]/$$/g')
+  printf 'UAT_BASICAUTH=%s\n' "$ESCAPED" >> "$ENV_DIR/.env"
   echo "    uat preview login: preview / $PREVIEW_PW"
 fi
 
@@ -116,7 +118,9 @@ rm -rf "$ENV_DIR/site-dist.prev"
 [[ -d "$ENV_DIR/site-dist" ]] && mv "$ENV_DIR/site-dist" "$ENV_DIR/site-dist.prev"
 cp -r "$ENV_DIR/repo/site/dist" "$ENV_DIR/site-dist"
 cp "$ENV_DIR/repo/infra/stack/site-nginx.conf" "$ENV_DIR/site-nginx.conf"
-cp "$ENV_DIR/repo/infra/stack/docker-compose.yml" "$ENV_DIR/docker-compose.yml"
+# Compose interpolates ${VARS} in values only, never in mapping keys — and the
+# Traefik router names are keys. Substitute the env into the template ourselves.
+sed "s/__ENV__/$ENV_NAME/g" "$ENV_DIR/repo/infra/stack/docker-compose.tpl.yml" > "$ENV_DIR/docker-compose.yml"
 
 # ---------- 4. bring up the stack ----------
 log "Starting bb-$ENV_NAME"
