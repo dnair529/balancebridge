@@ -74,14 +74,15 @@ EOF
 fi
 
 # UAT sits behind Traefik basic-auth + noindex so it can't be crawled or browsed publicly.
-if [[ "$ENV_NAME" == "uat" && ! -f "$ENV_DIR/.preview-password" ]]; then
-  PREVIEW_PW=$(gen 16)
-  printf '%s\n' "$PREVIEW_PW" > "$ENV_DIR/.preview-password"; chmod 600 "$ENV_DIR/.preview-password"
-  HTPASSWD=$(docker run --rm httpd:2-alpine htpasswd -nbB preview "$PREVIEW_PW" | tr -d '\n')
-  # Every '$' in the bcrypt hash must be doubled or compose treats it as interpolation.
-  # (Do NOT use bash ${var//$/$$} here — bash expands $$ to the shell's PID.)
-  ESCAPED=$(printf '%s' "$HTPASSWD" | sed 's/[$]/$$/g')
-  printf 'UAT_BASICAUTH=%s\n' "$ESCAPED" >> "$ENV_DIR/.env"
+# The password persists; the bcrypt hash is regenerated from it on every deploy so a
+# corrupt hash self-heals rather than being cached forever.
+if [[ "$ENV_NAME" == "uat" ]]; then
+  if [[ ! -f "$ENV_DIR/.preview-password" ]]; then
+    gen 16 > "$ENV_DIR/.preview-password"
+  fi
+  chmod 600 "$ENV_DIR/.preview-password"
+  PREVIEW_PW=$(tr -d '\n' < "$ENV_DIR/.preview-password")
+  sed -i '/^UAT_BASICAUTH=/d' "$ENV_DIR/.env"   # legacy key — no longer used
   echo "    uat preview login: preview / $PREVIEW_PW"
 fi
 
@@ -127,13 +128,19 @@ log "Starting bb-$ENV_NAME"
 cd "$ENV_DIR"
 DC="docker compose --env-file .env --env-file .env.routing"
 
-# UAT basic-auth middleware is defined as a label on the site container
+# UAT basic-auth middleware, written straight into an override file.
+# The bcrypt hash contains '$', which must be doubled: compose unescapes '$$' -> '$'
+# in FILE content (well defined). Routing the hash through a .env variable is NOT
+# well defined, so we never do that. Also note: bash's ${var//$/$$} would expand
+# $$ to the shell PID — use sed.
 if [[ "$ENV_NAME" == "uat" ]]; then
-  cat > docker-compose.override.yml <<'OVR'
+  HTPASSWD=$(docker run --rm httpd:2-alpine htpasswd -nbB preview "$PREVIEW_PW" | tr -d '\n')
+  HASH_ESC=$(printf '%s' "$HTPASSWD" | sed 's/[$]/$$/g')
+  cat > docker-compose.override.yml <<OVR
 services:
   site:
     labels:
-      traefik.http.middlewares.bb-uatauth-uat.basicauth.users: ${UAT_BASICAUTH}
+      traefik.http.middlewares.bb-uatauth-uat.basicauth.users: "$HASH_ESC"
       traefik.http.middlewares.bb-uatauth-uat.basicauth.realm: Balance Bridge UAT
 OVR
 else
