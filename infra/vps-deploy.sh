@@ -90,9 +90,10 @@ fi
 {
   echo "SITE_RULE=$SITE_RULE"
   if [[ "$ENV_NAME" == "uat" ]]; then
-    echo "SITE_MIDDLEWARES=bb-uatauth-uat@docker,bb-noindex-uat@docker"
+    echo "SITE_MIDDLEWARES=bb-uatauth-uat@docker,bb-noindex-uat@docker,bb-sec-uat@docker"
   else
-    echo "SITE_MIDDLEWARES=bb-noindex-prod@docker"
+    # NO noindex on production — attaching it would deindex the site from Google.
+    echo "SITE_MIDDLEWARES=bb-sec-prod@docker"
   fi
 } > "$ENV_DIR/.env.routing"
 
