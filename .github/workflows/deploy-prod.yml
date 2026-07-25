@@ -33,6 +33,7 @@ jobs:
 
       - name: Sync site build + repo to VPS
         run: |
+          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} 'mkdir -p /srv/balancebridge/prod/site-dist /srv/balancebridge/prod/repo'
           rsync -az --delete site/dist/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/srv/balancebridge/prod/site-dist/
           rsync -az --delete --exclude node_modules --exclude site/dist --exclude .git \
             ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/srv/balancebridge/prod/repo/

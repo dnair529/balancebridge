@@ -71,7 +71,8 @@ EOF
 done
 
 if [[ ! -f /srv/balancebridge/caddy/.env ]]; then
-  UAT_PASS=$(gen 16)
+  # UAT_PASS can be injected by CI (GitHub secret) so the preview password is known outside the box
+  UAT_PASS=${UAT_PASS:-$(gen 16)}
   HASH=$(docker run --rm caddy:2-alpine caddy hash-password --plaintext "$UAT_PASS")
   cat > /srv/balancebridge/caddy/.env <<EOF
 ACME_EMAIL=deepak529@gmail.com

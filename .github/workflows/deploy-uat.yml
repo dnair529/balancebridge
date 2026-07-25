@@ -31,9 +31,15 @@ jobs:
 
       - name: Sync site build + repo to VPS
         run: |
+          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} 'mkdir -p /srv/balancebridge/uat/site-dist /srv/balancebridge/uat/repo'
           rsync -az --delete site/dist/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/srv/balancebridge/uat/site-dist/
           rsync -az --delete --exclude node_modules --exclude site/dist --exclude .git \
             ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/srv/balancebridge/uat/repo/
+
+      - name: Bootstrap VPS (first run only — idempotent)
+        run: |
+          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "UAT_PASS='${{ secrets.UAT_PASSWORD }}' bash /srv/balancebridge/uat/repo/infra/bootstrap.sh"
 
       - name: Deploy stack
         run: |
