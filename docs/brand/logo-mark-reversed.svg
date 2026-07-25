@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Balance Bridge Financial mark">
+  <defs>
+    <linearGradient id="bbArcR" x1="8" y1="44" x2="56" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#34D399"/>
+      <stop offset="1" stop-color="#2DD4BF"/>
+    </linearGradient>
+  </defs>
+  <path d="M8 45 Q32 10 56 45" stroke="url(#bbArcR)" stroke-width="6" stroke-linecap="round"/>
+  <path d="M20 34.6 V45" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+  <path d="M44 34.6 V45" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+  <path d="M6 55 H58" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+</svg>

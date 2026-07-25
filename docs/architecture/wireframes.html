@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Balance Bridge — Wireframes v1</title>
+<style>
+  :root{--ink:#1e293b;--line:#94a3b8;--fill:#e2e8f0;--note:#0ea5e9;--accent:#10b981}
+  *{box-sizing:border-box;margin:0}
+  body{font:14px/1.5 ui-sans-serif,system-ui;color:var(--ink);background:#f1f5f9;padding:40px 20px}
+  h1{font-size:22px;margin-bottom:4px}
+  .sub{color:#64748b;margin-bottom:32px}
+  .frames{display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start}
+  .frame{background:#fff;border:1px solid var(--line);border-radius:8px;width:380px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+  .frame h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;padding:12px 16px;border-bottom:1px solid var(--fill);color:#475569}
+  .cv{padding:14px}
+  .b{border:1.5px dashed var(--line);border-radius:6px;padding:10px;margin-bottom:10px;background:#f8fafc;font-size:12px;color:#475569}
+  .b.solid{border-style:solid;background:var(--fill)}
+  .b.cta{border-color:var(--accent);color:#047857;font-weight:600;background:#ecfdf5}
+  .b .t{font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#334155;display:block;margin-bottom:3px}
+  .row{display:flex;gap:8px}.row .b{flex:1}
+  .note{font-size:11px;color:var(--note);margin:-6px 0 10px 2px}
+  .tall{min-height:72px}
+</style>
+</head>
+<body>
+<h1>Balance Bridge Financial — Wireframes v1</h1>
+<p class="sub">Grayscale structure only. Green = conversion elements. Blue notes = behavior annotations. Mobile: all rows stack, sticky CTA bar appears after 60% scroll.</p>
+<div class="frames">
+
+<div class="frame"><h2>Home</h2><div class="cv">
+  <div class="b solid">Header — logo · nav · Portal (ghost) · <b>Book consult</b> (primary)</div>
+  <div class="b tall"><span class="t">Hero (navy, arc glow)</span>H1: outcome promise · subhead · trust chips (ProAdvisor · TX-based · replies in 1 day)</div>
+  <div class="b cta">CTA pair: Book a free consultation ▸ &nbsp;|&nbsp; See pricing</div>
+  <div class="note">Subtle motion: staggered fade-rise; numbers count up in stats bar</div>
+  <div class="b">Social proof strip — client logos / industries served</div>
+  <div class="b tall"><span class="t">Problem → promise</span>3 pains (behind on books, no visibility, tax scramble) → our fix</div>
+  <div class="b tall"><span class="t">Services grid</span>10 cards, icon + 1-liner → detail pages</div>
+  <div class="b"><span class="t">How it works</span>3 steps: Free review → Cleanup & takeover → Monthly rhythm</div>
+  <div class="b tall"><span class="t">Proof</span>Stats bar + testimonial carousel + case-study card</div>
+  <div class="b"><span class="t">Lead magnet</span>TX Financial Health Checklist — email capture</div>
+  <div class="b cta">Full-width CTA band: Book a free consultation</div>
+  <div class="b solid">Footer — 4 cols + certs + cities + legal</div>
+</div></div>
+
+<div class="frame"><h2>Service detail (×10)</h2><div class="cv">
+  <div class="b solid">Header</div>
+  <div class="b"><span class="t">Breadcrumb + hero</span>H1 keyword-led · outcome subhead · consult CTA</div>
+  <div class="b tall"><span class="t">Who it's for / symptoms</span>bulleted pains this service kills</div>
+  <div class="b tall"><span class="t">What's included</span>deliverables checklist (specific: "reconciled by the 10th")</div>
+  <div class="b"><span class="t">How it works</span>timeline 3–4 steps</div>
+  <div class="b">Mini pricing anchor — "from $X/mo" → /pricing/</div>
+  <div class="b">FAQ accordion (service-specific, schema-marked)</div>
+  <div class="b">Related: 2 services + 2 industries + 1 blog post</div>
+  <div class="b cta">CTA band + sticky mobile bar</div>
+  <div class="b solid">Footer</div>
+</div></div>
+
+<div class="frame"><h2>Pricing</h2><div class="cv">
+  <div class="b solid">Header</div>
+  <div class="b"><span class="t">Hero</span>H1: honest pricing · "every engagement quoted after a free review"</div>
+  <div class="row">
+    <div class="b tall">Essentials<br>from $395/mo</div>
+    <div class="b tall" style="border-color:#10b981">Growth ★<br>from $795/mo</div>
+    <div class="b tall">Controller+<br>from $1,495/mo</div>
+  </div>
+  <div class="note">Middle tier visually elevated (most popular)</div>
+  <div class="b cta">Each card CTA → Get a custom quote</div>
+  <div class="b tall"><span class="t">Comparison table</span>feature × tier, tabular numerals</div>
+  <div class="b"><span class="t">Add-ons</span>cleanup/catch-up, payroll, CFO advisory day rate</div>
+  <div class="b">Pricing FAQs (accordion)</div>
+  <div class="b cta"><span class="t">Quote form</span>name · email · business type · revenue band · services needed → books consult on submit</div>
+  <div class="b solid">Footer</div>
+</div></div>
+
+<div class="frame"><h2>Contact</h2><div class="cv">
+  <div class="b solid">Header</div>
+  <div class="b"><span class="t">Split layout</span>Left: promise ("reply within 1 business day"), phone, email, service area. Right: form</div>
+  <div class="b cta"><span class="t">Form</span>name · email · phone (opt) · business · message · spam honeypot + time-trap</div>
+  <div class="b tall"><span class="t">Calendar embed</span>Cal.com inline — book 20-min intro call directly</div>
+  <div class="note">Form posts to portal API /api/leads; email alert + auto-reply</div>
+  <div class="b">FAQ teaser → /faq/</div>
+  <div class="b solid">Footer</div>
+</div></div>
+
+<div class="frame"><h2>Portal — Dashboard</h2><div class="cv">
+  <div class="b solid">Portal top bar — logo · client name · notifications · avatar</div>
+  <div class="row"><div class="b solid" style="max-width:96px;min-height:220px"><span class="t">Side nav</span>Dashboard<br>Documents<br>Messages<br>Tasks<br>Billing<br>Signatures<br>Settings</div>
+  <div style="flex:1">
+    <div class="b"><span class="t">Welcome + next deadline</span>"3 items need you before Aug 5"</div>
+    <div class="row"><div class="b">Open tasks (3)</div><div class="b">Unread msgs (1)</div></div>
+    <div class="row"><div class="b">Awaiting signature (1)</div><div class="b">Last invoice · Paid</div></div>
+    <div class="b tall"><span class="t">Recent documents</span>list + drag-drop upload zone</div>
+  </div></div>
+  <div class="note">Every widget deep-links to its section; mobile: side nav → bottom tabs</div>
+</div></div>
+
+<div class="frame"><h2>Blog index + article</h2><div class="cv">
+  <div class="b solid">Header</div>
+  <div class="b"><span class="t">Index hero</span>H1 + category filter pills</div>
+  <div class="b tall"><span class="t">Card grid</span>title · category · read time · excerpt</div>
+  <div class="b">Lead magnet inline card every 6 posts</div>
+  <div class="b" style="margin-top:14px"><span class="t">Article</span>breadcrumb · H1 · byline/date · TOC (desktop rail)</div>
+  <div class="b tall">Prose, 68ch measure · tables · FAQ block (schema)</div>
+  <div class="b cta">End CTA: relevant service + Book consult</div>
+  <div class="b">Related posts (3)</div>
+  <div class="b solid">Footer</div>
+</div></div>
+
+</div>
+</body>
+</html>
