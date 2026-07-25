@@ -1,16 +1,48 @@
-# One stack per environment. Deployed to /srv/balancebridge/{uat,prod}/ with its own .env.
-# Required in .env: ENV_NAME (uat|prod), POSTGRES_PASSWORD, SESSION_PEPPER, ... (see .env.example)
+# Balance Bridge — one stack per environment (uat | prod).
+#
+# IMPORTANT: this VPS already runs Traefik (container n8n-traefik-1) which owns
+# ports 80/443 and routes by container label on the `n8n_default` network.
+# We publish NO host ports. We attach to that network and advertise ourselves
+# with Traefik labels, exactly like the other services on this box.
+# Nothing here modifies Traefik or any pre-existing container.
 name: bb-${ENV_NAME}
+
+x-traefik-common: &traefik-common
+  traefik.enable: 'true'
+  traefik.docker.network: n8n_default
+
 services:
+  # ---------- static marketing site ----------
+  site:
+    image: nginx:alpine
+    container_name: bb-site-${ENV_NAME}
+    restart: unless-stopped
+    volumes:
+      - ./site-dist:/usr/share/nginx/html:ro
+      - ./site-nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    labels:
+      <<: *traefik-common
+      traefik.http.routers.bb-site-${ENV_NAME}.rule: ${SITE_RULE}
+      traefik.http.routers.bb-site-${ENV_NAME}.entrypoints: websecure
+      traefik.http.routers.bb-site-${ENV_NAME}.tls: 'true'
+      traefik.http.routers.bb-site-${ENV_NAME}.tls.certresolver: mytlschallenge
+      traefik.http.routers.bb-site-${ENV_NAME}.middlewares: ${SITE_MIDDLEWARES}
+      traefik.http.services.bb-site-${ENV_NAME}.loadbalancer.server.port: '80'
+      # apex -> www redirect is handled by the site router rule; noindex for uat:
+      traefik.http.middlewares.bb-noindex-${ENV_NAME}.headers.customresponseheaders.X-Robots-Tag: noindex, nofollow
+    networks: [edge]
+
+  # ---------- client portal ----------
   portal:
     build:
       context: ./repo/portal
     image: bb-portal:${ENV_NAME}
-    container_name: portal-${ENV_NAME}
+    container_name: bb-portal-${ENV_NAME}
     restart: unless-stopped
     env_file: .env
     environment:
       NODE_ENV: production
+      PORT: '3000'
       DATABASE_URL: postgres://portal:${POSTGRES_PASSWORD}@db:5432/portal
       UPLOADS_DIR: /data/uploads
     volumes:
@@ -18,11 +50,19 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    labels:
+      <<: *traefik-common
+      traefik.http.routers.bb-portal-${ENV_NAME}.rule: Host(`${PORTAL_HOST}`)
+      traefik.http.routers.bb-portal-${ENV_NAME}.entrypoints: websecure
+      traefik.http.routers.bb-portal-${ENV_NAME}.tls: 'true'
+      traefik.http.routers.bb-portal-${ENV_NAME}.tls.certresolver: mytlschallenge
+      traefik.http.services.bb-portal-${ENV_NAME}.loadbalancer.server.port: '3000'
     networks: [default, edge]
 
+  # ---------- database (internal only — no host port, not on the edge network) ----------
   db:
     image: postgres:16-alpine
-    container_name: db-${ENV_NAME}
+    container_name: bb-db-${ENV_NAME}
     restart: unless-stopped
     environment:
       POSTGRES_USER: portal
@@ -34,12 +74,13 @@ services:
       test: ['CMD-SHELL', 'pg_isready -U portal -d portal']
       interval: 5s
       timeout: 3s
-      retries: 10
-    # No host port exposed — reachable only on the internal network.
+      retries: 20
+    networks: [default]
 
+  # ---------- e-signature ----------
   docuseal:
     image: docuseal/docuseal:latest
-    container_name: docuseal-${ENV_NAME}
+    container_name: bb-docuseal-${ENV_NAME}
     restart: unless-stopped
     environment:
       DATABASE_URL: postgres://portal:${POSTGRES_PASSWORD}@db:5432/docuseal
@@ -51,19 +92,30 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    labels:
+      <<: *traefik-common
+      traefik.http.routers.bb-sign-${ENV_NAME}.rule: Host(`${DOCUSEAL_PUBLIC_HOST}`)
+      traefik.http.routers.bb-sign-${ENV_NAME}.entrypoints: websecure
+      traefik.http.routers.bb-sign-${ENV_NAME}.tls: 'true'
+      traefik.http.routers.bb-sign-${ENV_NAME}.tls.certresolver: mytlschallenge
+      traefik.http.services.bb-sign-${ENV_NAME}.loadbalancer.server.port: '3000'
     networks: [default, edge]
 
+  # ---------- nightly backups ----------
   backup:
     image: postgres:16-alpine
-    container_name: backup-${ENV_NAME}
+    container_name: bb-backup-${ENV_NAME}
     restart: unless-stopped
     environment:
       PGPASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - ./backups:/backups
       - uploads:/data/uploads:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [default]
     entrypoint: /bin/sh
-    # Nightly at 03:15 UTC: pg_dump (portal + docuseal) + uploads tarball, keep 14 days.
     command:
       - -c
       - |
@@ -84,6 +136,7 @@ volumes:
 
 networks:
   default:
+    name: bb-${ENV_NAME}-internal
   edge:
-    name: bb-${ENV_NAME}
+    name: n8n_default
     external: true
