@@ -25,6 +25,9 @@ RUN apt-get update \
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/package.json ./package.json
+# tsc emits .js only, so the RLS script has to be carried across by hand.
+# src/db/apply-rls.ts looks for it next to itself first, which is here.
+COPY --from=build /app/src/db/rls.sql ./dist/db/rls.sql
 COPY drizzle ./drizzle
 COPY public ./public
 
@@ -40,5 +43,6 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD curl -fsS http://127.0.0.1:3000/healthz || exit 1
 
-# Migrations run on boot, then the server starts.
+# Migrations (which now also apply row-level security from dist/db/rls.sql)
+# run on boot, then the server starts.
 CMD ["sh", "-c", "node dist/db/migrate.js && node dist/server.js"]
