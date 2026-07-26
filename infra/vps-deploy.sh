@@ -73,6 +73,21 @@ EOF
   echo "    portal admin: deepak529@gmail.com / $ADMIN_PW"
 fi
 
+# Self-healing env: a release that introduces a new REQUIRED variable must not
+# brick an environment whose .env was written by an older deploy. Add anything
+# missing, generating secrets where appropriate. Never overwrites an existing value.
+ensure_env() {
+  local key="$1" val="$2"
+  if ! grep -q "^${key}=" "$ENV_DIR/.env" 2>/dev/null; then
+    printf '%s=%s\n' "$key" "$val" >> "$ENV_DIR/.env"
+    echo "    + added $key"
+  fi
+}
+ensure_env FILE_ENCRYPTION_KEY "$(openssl rand -base64 32)"
+ensure_env AI_PROVIDER stub
+ensure_env AI_CONFIDENCE_THRESHOLD 75
+ensure_env DEMO_PASSWORD "${DEMO_PASSWORD:-Simba1}"
+
 # UAT sits behind Traefik basic-auth + noindex so it can't be crawled or browsed publicly.
 # The password persists; the bcrypt hash is regenerated from it on every deploy so a
 # corrupt hash self-heals rather than being cached forever.
@@ -165,7 +180,26 @@ $DC exec -T db psql -U portal -d portal -tc "SELECT 1 FROM pg_database WHERE dat
   | grep -q 1 || $DC exec -T db createdb -U portal docuseal
 
 log "Running migrations"
-$DC exec -T portal node dist/db/migrate.js || die "migration failed"
+# The portal must actually be up before we can exec into it. A crash-looping
+# container otherwise produces "container is restarting" and hides the real cause,
+# so surface its logs rather than a bare failure.
+log "Waiting for portal"
+for i in $(seq 1 30); do
+  state=$(docker inspect -f '{{.State.Status}}' "bb-portal-$ENV_NAME" 2>/dev/null || echo missing)
+  [[ "$state" == "running" ]] && break
+  sleep 2
+done
+if [[ "${state:-}" != "running" ]]; then
+  echo "--- last 30 lines of bb-portal-$ENV_NAME ---"
+  docker logs --tail 30 "bb-portal-$ENV_NAME" 2>&1 || true
+  die "portal container is not running (state: ${state:-unknown})"
+fi
+
+if ! $DC exec -T portal node dist/db/migrate.js; then
+  echo "--- last 30 lines of bb-portal-$ENV_NAME ---"
+  docker logs --tail 30 "bb-portal-$ENV_NAME" 2>&1 || true
+  die "migration failed"
+fi
 if [[ "$(grep -c '^SEED_DEMO=1' .env || true)" != "0" ]]; then
   $DC exec -T portal node dist/db/seed.js || echo "    (seed skipped — probably already seeded)"
 fi
