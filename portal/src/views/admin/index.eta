@@ -19,6 +19,11 @@
     <a class="btn btn-ghost btn-sm" href="/admin/clients">Manage clients</a>
     <a class="btn btn-ghost btn-sm" href="/admin/invites">Send an invite</a>
     <a class="btn btn-ghost btn-sm" href="/admin/leads">Review leads</a>
+    <a class="btn btn-ghost btn-sm" href="/admin/health">System health</a>
+    <a class="btn btn-ghost btn-sm" href="/admin/quarantine">Quarantine</a>
+    <a class="btn btn-ghost btn-sm" href="/admin/integrations">Integrations</a>
+    <a class="btn btn-ghost btn-sm" href="/admin/rules">Rules</a>
+    <a class="btn btn-ghost btn-sm" href="/admin/ai">AI usage</a>
     <% if (it.user.role === 'admin') { %><a class="btn btn-ghost btn-sm" href="/admin/audit">Audit log</a><% } %>
     <form method="post" action="/admin/invoices/sync" class="inline">
       <input type="hidden" name="_csrf" value="<%= it.csrf %>">

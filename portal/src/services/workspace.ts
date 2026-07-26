@@ -485,9 +485,9 @@ function hrefFor(item: typeof workItems.$inferSelect): string {
     case 'close':
     case 'review':
       return `/workspace/close/${item.clientId}`;
-    // Quarantine has no staff HTML page of its own yet (intake exposes it as
-    // an API only), so land on the brief rather than a dead link.
+    // Quarantine now has a staff HTML page of its own.
     case 'quarantine':
+      return '/admin/quarantine';
     case 'answer':
     case 'chase':
     case 'reconcile':

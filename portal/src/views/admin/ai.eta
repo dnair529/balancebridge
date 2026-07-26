@@ -1,0 +1,126 @@
+<% layout('../layout') %>
+<div class="page-head">
+  <p><a class="link" href="/admin">← Admin</a></p>
+  <h1>AI usage &amp; safety</h1>
+  <p class="sub">
+    Every AI invocation is logged: what it was asked, how confident it was, how
+    long it took, what it cost, and whether a human took the answer. Provider
+    <span class="chip"><%= it.provider %></span> · suggestions below
+    <%= it.threshold %>% confidence are handed to a human instead of applied.
+  </p>
+</div>
+
+<div class="stat-grid">
+  <span class="stat-card"><span class="stat-num"><%= it.totals.runs %></span><span class="stat-label">Runs</span></span>
+  <span class="stat-card"><span class="stat-num"><%= it.totals.acceptanceRate === null ? '—' : it.totals.acceptanceRate + '%' %></span><span class="stat-label">Accepted by a human</span></span>
+  <span class="stat-card"><span class="stat-num"><%= it.totals.avgConfidence === null ? '—' : it.totals.avgConfidence %></span><span class="stat-label">Avg confidence</span></span>
+  <span class="stat-card"><span class="stat-num"><%= it.errorCount %></span><span class="stat-label">Errors</span></span>
+</div>
+
+<section class="card">
+  <div class="card-head"><h2>By task</h2></div>
+  <% if (it.byTask.length === 0) { %>
+    <p class="empty">Nothing has been run yet.</p>
+  <% } else { %>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Task</th>
+        <th class="tabular">Runs</th>
+        <th class="tabular">Avg confidence</th>
+        <th class="tabular">Acceptance</th>
+        <th class="tabular hide-sm">Avg latency</th>
+        <th class="tabular hide-sm">Tokens in / out</th>
+        <th class="tabular">Errors</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% it.byTask.forEach(function (t) { %>
+      <tr>
+        <td class="strong"><%= t.task %></td>
+        <td class="tabular"><%= t.runs %></td>
+        <td class="tabular"><%= t.avgConfidence === null ? '—' : t.avgConfidence + '%' %></td>
+        <td class="tabular">
+          <% if (t.acceptanceRate === null) { %>
+            <span class="muted">not reviewed</span>
+          <% } else { %>
+            <%= t.acceptanceRate %>% <span class="muted small">(<%= t.accepted %>/<%= t.reviewed %>)</span>
+          <% } %>
+        </td>
+        <td class="tabular hide-sm"><%= t.avgLatencyMs === null ? '—' : t.avgLatencyMs + ' ms' %></td>
+        <td class="tabular hide-sm"><%= t.inputTokens %> / <%= t.outputTokens %></td>
+        <td class="tabular"><%= t.errors %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <p class="muted small">
+    Acceptance is measured only over runs a human actually reviewed
+    (<code>accepted</code> is not null). A task showing "not reviewed" has not
+    been judged yet — it is not a 0%.
+  </p>
+  <% } %>
+</section>
+
+<section class="card">
+  <div class="card-head"><h2>By provider</h2></div>
+  <% if (it.byProvider.length === 0) { %>
+    <p class="empty">No runs recorded.</p>
+  <% } else { %>
+  <ul class="list">
+    <% it.byProvider.forEach(function (p) { %>
+      <li class="list-row">
+        <span class="strong"><%= p.provider %></span>
+        <span><%= p.runs %> run<%= p.runs === 1 ? '' : 's' %></span>
+        <% if (p.errors > 0) { %><span class="chip status-past"><%= p.errors %> error<%= p.errors === 1 ? '' : 's' %></span><% } %>
+        <% if (p.provider === 'rules-engine') { %><span class="muted small">deterministic — no model was called</span><% } %>
+      </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>
+
+<section class="card">
+  <div class="card-head"><h2>Recent runs</h2><span class="muted small">newest first</span></div>
+  <% if (it.recent.length === 0) { %>
+    <p class="empty">Nothing yet.</p>
+  <% } else { %>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>When</th>
+        <th>Task</th>
+        <th class="hide-sm">Provider</th>
+        <th class="hide-sm">Client</th>
+        <th class="tabular">Confidence</th>
+        <th class="tabular hide-sm">Latency</th>
+        <th>Outcome</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% it.recent.forEach(function (r) { %>
+      <tr>
+        <td class="muted small"><%= it.fmtDateTime(r.at) %></td>
+        <td class="strong"><%= r.task %></td>
+        <td class="hide-sm muted"><%= r.provider %><%= r.model ? ' · ' + r.model : '' %></td>
+        <td class="hide-sm muted"><%= r.clientName || '—' %></td>
+        <td class="tabular"><%= r.confidence === null ? '—' : r.confidence + '%' %></td>
+        <td class="tabular hide-sm"><%= r.latencyMs === null ? '—' : r.latencyMs + ' ms' %></td>
+        <td>
+          <% if (r.error) { %>
+            <span class="chip status-past">error</span>
+            <span class="small"><%= r.error %></span>
+          <% } else if (r.accepted === true) { %>
+            <span class="chip status-paid">accepted</span>
+          <% } else if (r.accepted === false) { %>
+            <span class="chip">corrected</span>
+          <% } else { %>
+            <span class="muted small">awaiting review</span>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</section>

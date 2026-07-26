@@ -1,0 +1,146 @@
+<% layout('../layout') %>
+<div class="page-head">
+  <p><a class="link" href="/admin">← Admin</a></p>
+  <h1>System health</h1>
+  <p class="sub">Where the work is, what is at risk, and what the machinery did last.</p>
+</div>
+
+<div class="stat-grid">
+  <a class="stat-card" href="/workspace"><span class="stat-num"><%= it.openWorkTotal %></span><span class="stat-label">Open work items</span></a>
+  <a class="stat-card" href="/admin/quarantine"><span class="stat-num"><%= it.quarantine.count %></span><span class="stat-label">In quarantine</span></a>
+  <span class="stat-card"><span class="stat-num"><%= it.closeRisk.length %></span><span class="stat-label">Clients at risk of missing close</span></span>
+  <span class="stat-card"><span class="stat-num"><%= it.failedOutbound.count %></span><span class="stat-label">Failed outbound messages</span></span>
+</div>
+
+<div class="two-col">
+  <section class="card">
+    <div class="card-head"><h2>Open work by kind</h2><a class="link" href="/workspace">Queue →</a></div>
+    <% if (it.openWorkByKind.length === 0) { %>
+      <p class="empty">Nothing open anywhere.</p>
+    <% } else { %>
+      <ul class="list">
+        <% it.openWorkByKind.forEach(function (k) { %>
+          <li class="list-row"><span class="strong"><%= k.kind %></span><span class="ws-num"><%= k.count %></span></li>
+        <% }) %>
+      </ul>
+      <% if (it.blockedWork > 0) { %>
+        <p class="muted small"><%= it.blockedWork %> of those are blocked on somebody else.</p>
+      <% } %>
+    <% } %>
+    <p class="muted small">
+      <%= it.openQuestions %> unanswered client question<%= it.openQuestions === 1 ? '' : 's' %> ·
+      <%= it.openDocRequests %> open document request<%= it.openDocRequests === 1 ? '' : 's' %> ·
+      <%= it.openAnomalies %> open anomal<%= it.openAnomalies === 1 ? 'y' : 'ies' %>
+    </p>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Close risk</h2></div>
+    <% if (it.closeRisk.length === 0) { %>
+      <p class="empty">No client is at risk of missing their close target.</p>
+    <% } else { %>
+      <ul class="list">
+        <% it.closeRisk.forEach(function (r) { %>
+          <li class="list-row">
+            <a class="link" href="/workspace/close/<%= r.clientId %>"><%= r.clientName %></a>
+            <span class="chip ws-risk-<%= r.verdict.level %>"><%= r.verdict.level %></span>
+            <span class="muted small"><%= r.periodStart %> · <%= r.status %> · <%= r.verdict.reason %></span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+</div>
+
+<div class="two-col">
+  <section class="card">
+    <div class="card-head"><h2>Quarantine backlog</h2><a class="link" href="/admin/quarantine">Open →</a></div>
+    <% if (it.quarantine.count === 0) { %>
+      <p class="empty">Empty. Every inbound item resolved to a client.</p>
+    <% } else { %>
+      <p><span class="ws-num"><%= it.quarantine.count %></span> item<%= it.quarantine.count === 1 ? '' : 's' %> waiting, oldest received <%= it.fmtDateTime(it.quarantine.oldestAt) %>.</p>
+      <% var qw = it.retention.windows.filter(function (w) { return w.name === 'intake quarantine'; })[0]; %>
+      <% if (qw) { %><p class="muted small">Quarantined items are purged after <%= qw.days %> days, so a backlog is a data-loss clock, not just a chore.</p><% } %>
+    <% } %>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Failed outbound</h2></div>
+    <% if (it.failedOutbound.count === 0) { %>
+      <p class="empty">Nothing failed to send.</p>
+    <% } else { %>
+      <ul class="list">
+        <% it.failedOutbound.recent.forEach(function (m) { %>
+          <li class="list-row">
+            <span class="strong"><%= m.clientName %></span>
+            <span class="chip"><%= m.channel %></span>
+            <span class="muted small"><%= m.purpose %> · <%= it.fmtDateTime(m.createdAt) %></span>
+            <span class="small"><%= m.failureReason || 'no reason recorded' %></span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Books health, per client</h2>
+    <form method="post" action="/admin/health/recompute" class="inline">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <button class="btn btn-ghost btn-sm" type="submit">Recompute all</button>
+    </form>
+  </div>
+  <table class="table">
+    <thead><tr><th>Client</th><th class="tabular">Score</th><th>Band</th><th class="tabular hide-sm">Failing checks</th><th class="hide-sm">Computed</th></tr></thead>
+    <tbody>
+      <% it.clientHealth.forEach(function (c) { %>
+      <tr>
+        <td class="strong"><a class="link" href="/admin/clients/<%= c.clientId %>"><%= c.clientName %></a></td>
+        <td class="tabular"><%= c.score === null ? '—' : c.score + ' / ' + c.maxScore %></td>
+        <td><% if (c.band) { %><span class="chip ws-band"><%= c.band.label %></span><% } else { %><span class="muted small">never computed</span><% } %></td>
+        <td class="tabular hide-sm"><%= c.score === null ? '—' : c.failing %></td>
+        <td class="hide-sm muted small"><%= it.fmtDateTime(c.computedAt) %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <p class="muted small">
+    The same 20-point checklist the client downloaded before they were a client,
+    computed from their own ledger. A check we cannot measure fails rather than
+    being awarded.
+  </p>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Retention</h2>
+    <% if (it.user.role === 'admin') { %>
+      <form method="post" action="/admin/health/retention" class="inline">
+        <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+        <button class="btn btn-ghost btn-sm" type="submit">Run report (dry run)</button>
+      </form>
+    <% } %>
+  </div>
+  <% if (it.retention.lastRunAt) { %>
+    <p>
+      Last run <%= it.fmtDateTime(it.retention.lastRunAt) %><% if (it.retention.lastRunBy) { %> by <%= it.retention.lastRunBy %><% } %>
+      <% if (it.retention.lastRunMeta && it.retention.lastRunMeta.totalMatched !== undefined) { %>
+        — <span class="strong"><%= it.retention.lastRunMeta.totalMatched %></span> row(s) eligible for deletion.
+      <% } %>
+    </p>
+  <% } else { %>
+    <p class="empty">No retention report has been run from the portal yet.</p>
+  <% } %>
+  <ul class="list">
+    <% it.retention.windows.forEach(function (w) { %>
+      <li class="list-row"><span class="strong"><%= w.name %></span><span class="muted small">kept <%= w.days %> days</span></li>
+    <% }) %>
+  </ul>
+  <p class="muted small">
+    The report counts; it never deletes. Deletion stays a deliberate act on the
+    command line (<code>node dist/lib/retention.js --apply</code>) with
+    owner-grade credentials, because audit rows are financial records with a
+    seven-year floor that no environment variable can shorten.
+  </p>
+</section>

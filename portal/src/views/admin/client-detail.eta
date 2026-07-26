@@ -9,6 +9,7 @@
     · <span class="chip status-<%= it.client.status %>"><%= it.client.status %></span>
   </p>
   <div class="action-row">
+    <a class="btn btn-ghost btn-sm" href="/workspace/client/<%= it.client.id %>">Workspace brief</a>
     <a class="btn btn-ghost btn-sm" href="/dashboard?client=<%= it.client.id %>">Dashboard</a>
     <a class="btn btn-ghost btn-sm" href="/documents?client=<%= it.client.id %>">Documents</a>
     <a class="btn btn-ghost btn-sm" href="/messages?client=<%= it.client.id %>">Messages</a>
@@ -16,6 +17,178 @@
     <a class="btn btn-ghost btn-sm" href="/billing?client=<%= it.client.id %>">Billing</a>
     <a class="btn btn-ghost btn-sm" href="/signatures?client=<%= it.client.id %>">Signatures</a>
   </div>
+</div>
+
+<div class="two-col">
+  <section class="card">
+    <div class="card-head">
+      <h2>Books health</h2>
+      <% if (it.overview.health.band) { %><span class="chip ws-band"><%= it.overview.health.band.label %></span><% } %>
+    </div>
+    <% if (it.overview.health.score === null) { %>
+      <p class="empty">No health score computed yet — run it from <a class="link" href="/admin/health">System health</a>.</p>
+    <% } else { %>
+      <p>
+        <span class="ws-num"><%= it.overview.health.score %></span> / <%= it.overview.health.maxScore %>
+        <span class="muted small">as of <%= it.fmtDateTime(it.overview.health.computedAt) %></span>
+      </p>
+      <p class="muted small"><%= it.overview.health.band.blurb %></p>
+      <% if (it.overview.health.failing.length > 0) { %>
+        <h3 class="h3">Failing checks</h3>
+        <ul class="list">
+          <% it.overview.health.failing.slice(0, 6).forEach(function (c) { %>
+            <li class="list-row"><span class="strong"><%= c.label %></span><span class="muted small"><%= c.detail %></span></li>
+          <% }) %>
+        </ul>
+      <% } %>
+    <% } %>
+
+    <hr class="rule">
+    <div class="card-head"><h2>Close period</h2><a class="link" href="/workspace/close/<%= it.client.id %>">Open →</a></div>
+    <% if (!it.overview.closePeriod) { %>
+      <p class="empty">No close period has been opened for this client.</p>
+    <% } else { %>
+      <p>
+        <span class="strong"><%= it.overview.closePeriod.periodStart %> → <%= it.overview.closePeriod.periodEnd %></span>
+        <span class="chip"><%= it.overview.closePeriod.status.replace('_', ' ') %></span>
+      </p>
+      <p class="muted small">
+        Target <%= it.overview.closePeriod.targetDate || 'not set' %>
+        <% if (it.overview.closePeriod.deliveredAt) { %> · delivered <%= it.fmtDate(it.overview.closePeriod.deliveredAt) %><% } %>
+        <% if (it.overview.closePeriod.narrativeApprovedAt) { %> · narrative approved <%= it.fmtDate(it.overview.closePeriod.narrativeApprovedAt) %><% } else if (it.overview.closePeriod.narrative) { %> · narrative drafted, not approved<% } %>
+      </p>
+    <% } %>
+
+    <hr class="rule">
+    <div class="card-head"><h2>Effort vs fee</h2><a class="link" href="/workspace/capacity">Capacity →</a></div>
+    <% if (!it.overview.effort) { %>
+      <p class="empty">No effort recorded in the last 90 days.</p>
+    <% } else { %>
+      <p>
+        <span class="strong"><%= Math.round(it.overview.effort.minutes / 60 * 10) / 10 %>h</span> of effort against
+        <span class="strong"><%= it.fmtMoney(it.overview.effort.invoicedCents) %></span> invoiced in the last 90 days.
+        <% if (it.overview.effort.flagged) { %><span class="chip status-past">above the median engagement</span><% } %>
+      </p>
+      <p class="muted small"><%= it.overview.effort.note %></p>
+    <% } %>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Channel identities</h2></div>
+    <p class="muted small">
+      How an inbound text, WhatsApp message or forwarded email resolves to this
+      client. Nothing is ever inferred — an identity that is not on this list
+      goes to <a class="link" href="/admin/quarantine">quarantine</a>. Outbound
+      messaging needs documented consent (TCPA).
+    </p>
+    <% if (it.overview.identities.length === 0) { %>
+      <p class="empty">None yet. Add the owner's mobile below and SMS capture starts working for them.</p>
+    <% } else { %>
+      <table class="table">
+        <thead><tr><th>Channel</th><th>Identity</th><th>State</th><th></th></tr></thead>
+        <tbody>
+          <% it.overview.identities.forEach(function (idn) { %>
+          <tr>
+            <td><span class="chip"><%= idn.channel %></span></td>
+            <td class="strong"><%= idn.identity %><% if (idn.label) { %><br><span class="muted small"><%= idn.label %></span><% } %></td>
+            <td>
+              <% if (idn.revokedAt) { %><span class="chip status-void">removed</span><% } %>
+              <% if (idn.verifiedAt) { %><span class="chip chip-you">verified</span><% } else { %><span class="chip">unverified</span><% } %>
+              <% if (idn.consentAt) { %>
+                <span class="chip status-paid">consent</span>
+                <span class="muted small"><%= it.fmtDateTime(idn.consentAt) %></span>
+              <% } else { %>
+                <span class="chip status-past">no consent</span>
+              <% } %>
+            </td>
+            <td class="row-actions">
+              <form method="post" action="/admin/clients/<%= it.client.id %>/identities/<%= idn.id %>" class="inline">
+                <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+                <input type="hidden" name="action" value="<%= idn.consentAt ? 'withdraw' : 'consent' %>">
+                <button class="btn btn-ghost btn-sm" type="submit"><%= idn.consentAt ? 'Withdraw consent' : 'Record consent' %></button>
+              </form>
+              <% if (!idn.verifiedAt && !idn.revokedAt) { %>
+              <form method="post" action="/admin/clients/<%= it.client.id %>/identities/<%= idn.id %>" class="inline">
+                <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+                <input type="hidden" name="action" value="verify">
+                <button class="btn btn-ghost btn-sm" type="submit">Verify</button>
+              </form>
+              <% } %>
+              <% if (!idn.revokedAt) { %>
+              <form method="post" action="/admin/clients/<%= it.client.id %>/identities/<%= idn.id %>" class="inline">
+                <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+                <input type="hidden" name="action" value="remove">
+                <button class="btn btn-ghost btn-sm" type="submit">Remove</button>
+              </form>
+              <% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+
+    <hr class="rule">
+    <h3 class="h3">Add an identity</h3>
+    <form method="post" action="/admin/clients/<%= it.client.id %>/identities" class="stack">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <div class="field-grid">
+        <label class="field"><span>Channel</span>
+          <select name="channel">
+            <% it.channels.forEach(function (ch) { %><option value="<%= ch %>"><%= ch %></option><% }) %>
+          </select>
+        </label>
+        <label class="field"><span>Identity</span>
+          <input type="text" name="identity" required placeholder="(512) 555-0147 or dana@example.com">
+        </label>
+        <label class="field"><span>Label</span><input type="text" name="label" placeholder="Owner's mobile"></label>
+      </div>
+      <label class="checkbox"><input type="checkbox" name="verified" value="1" checked> We have verified this really is them</label>
+      <label class="checkbox"><input type="checkbox" name="consent" value="1"> They consent to being messaged here (records a TCPA timestamp)</label>
+      <p class="muted small">Phone numbers are normalised to E.164 before they are stored — that is the only form an inbound provider webhook will match.</p>
+      <button class="btn btn-primary btn-sm" type="submit">Add identity</button>
+    </form>
+  </section>
+</div>
+
+<div class="two-col">
+  <section class="card">
+    <div class="card-head"><h2>Open document requests</h2></div>
+    <% if (it.overview.docRequests.length === 0) { %>
+      <p class="empty">Nothing outstanding — we are not waiting on this client for anything.</p>
+    <% } else { %>
+      <ul class="list">
+        <% it.overview.docRequests.forEach(function (r) { %>
+          <li class="list-row">
+            <span class="strong"><%= r.label %></span>
+            <span class="muted small">
+              asked <%= it.fmtDate(r.createdAt) %>
+              <% if (r.nudgeCount > 0) { %> · nudged <%= r.nudgeCount %>×, last <%= it.fmtDate(r.lastNudgedAt) %><% } else { %> · never nudged<% } %>
+            </span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+    <p class="muted small"><%= it.overview.openQuestions %> unanswered question<%= it.overview.openQuestions === 1 ? '' : 's' %> with this client.</p>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Open work</h2><a class="link" href="/workspace?client=<%= it.client.id %>">Queue →</a></div>
+    <% if (it.overview.openWork.length === 0) { %>
+      <p class="empty">Nothing open.</p>
+    <% } else { %>
+      <ul class="list">
+        <% it.overview.openWork.forEach(function (w) { %>
+          <li class="list-row">
+            <span class="ws-kind kind-<%= w.kind %>"><%= w.kind %></span>
+            <span class="strong"><%= w.title %></span>
+            <% if (w.itemCount > 1) { %><span class="muted small"><%= w.itemCount %> items</span><% } %>
+            <% if (w.status === 'blocked') { %><span class="chip status-past">blocked</span><% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
 </div>
 
 <div class="two-col">

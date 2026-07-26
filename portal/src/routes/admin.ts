@@ -1,12 +1,14 @@
 import type { FastifyInstance } from 'fastify';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
-import { and, desc, eq, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import {
   auditLog,
+  channelIdentities,
   clients,
   documents,
+  intakeItems,
   invites,
   invoices,
   leads,
@@ -22,7 +24,23 @@ import { generateToken, hashToken } from '../auth/tokens.js';
 import { sendMail, inviteEmail, taskAssignedEmail, signatureRequestEmail } from '../lib/mail.js';
 import { stripe, upsertInvoiceFromStripe } from '../lib/stripe.js';
 import { createSubmissionFromPdf, docusealConfigured } from '../lib/docuseal.js';
+import { runRetention } from '../lib/retention.js';
 import { config } from '../config.js';
+import { linkIdentity } from '../intake/identity.js';
+import type { Channel } from '../intake/channels/types.js';
+import { recomputeAll } from '../services/healthScore.js';
+import {
+  aiUsage,
+  clientOverview,
+  integrationRows,
+  isIntegrationProvider,
+  quarantineQueue,
+  recheckIntegration,
+  rulesOverview,
+  setRuleDisabled,
+  systemHealth,
+  RETENTION_AUDIT_ACTION,
+} from '../services/adminOverview.js';
 
 /** Reusable checklist templates staff can apply to a client. */
 const TASK_TEMPLATES: Record<string, { title: string; items: Array<{ title: string; owner: 'client' | 'firm' }> }> = {
@@ -57,6 +75,26 @@ const TASK_TEMPLATES: Record<string, { title: string; items: Array<{ title: stri
 };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * The channels an identity can be registered on — the `channel_identities`
+ * enum, restated so a form value is validated against a list rather than
+ * trusted into an enum column.
+ */
+const IDENTITY_CHANNELS: readonly Channel[] = [
+  'sms',
+  'whatsapp',
+  'email',
+  'portal',
+  'pwa',
+  'voice',
+  'cloud_folder',
+  'bank_feed',
+];
+
+function isIdentityChannel(value: string): value is Channel {
+  return (IDENTITY_CHANNELS as readonly string[]).includes(value);
+}
 
 export async function adminRoutes(app: FastifyInstance): Promise<void> {
   // Everything under /admin requires staff; /admin/audit requires admin.
@@ -146,6 +184,11 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
       byList.set(task.listId, arr);
     }
 
+    // Everything the v1 subsystems know about this client: who can text us,
+    // how healthy the books are, what we are still chasing, where the close is,
+    // and whether the engagement is paying for the effort it takes.
+    const overview = await clientOverview(client.id);
+
     return reply.viewPage('admin/client-detail.eta', {
       title: client.businessName,
       client,
@@ -159,8 +202,149 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
       inviteRows,
       templates: Object.entries(TASK_TEMPLATES).map(([key, t]) => ({ key, title: t.title })),
       docusealOn: docusealConfigured(),
+      overview,
+      channels: IDENTITY_CHANNELS,
     });
   });
+
+  /* ====================================================================== */
+  /* Channel identities — what makes SMS capture work for a client          */
+  /* ====================================================================== */
+
+  /**
+   * Register an identity against a client.
+   *
+   * Normalisation is `linkIdentity`'s job, not this route's: a phone number
+   * typed as `(512) 555-0147` becomes `+15125550147` there, which is the only
+   * form an inbound Twilio webhook will ever match. Doing it here as well would
+   * be a second implementation of the rule that decides which client a receipt
+   * belongs to.
+   */
+  app.post<{ Params: { id: string } }>('/admin/clients/:id/identities', async (req, reply) => {
+    if (!UUID_RE.test(req.params.id)) return reply.callNotFound();
+    const client = await db.query.clients.findFirst({ where: eq(clients.id, req.params.id) });
+    if (!client) return reply.callNotFound();
+    const back = `/admin/clients/${client.id}`;
+
+    const body = (req.body ?? {}) as Record<string, string>;
+    const channel = (body.channel ?? '').trim();
+    const raw = (body.identity ?? '').trim();
+    if (!isIdentityChannel(channel)) {
+      return reply.flash('error', 'Pick a channel from the list.').redirect(back, 303);
+    }
+    if (!raw) {
+      return reply.flash('error', 'An identity needs a phone number, address or folder id.').redirect(back, 303);
+    }
+
+    // Moving an identity between clients is legitimate (a bookkeeper fixing a
+    // mistake) but it is never silent — record where it came from.
+    const existing = await db.query.channelIdentities.findFirst({
+      where: eq(channelIdentities.identity, raw),
+    });
+
+    let linked;
+    try {
+      linked = await linkIdentity({
+        clientId: client.id,
+        channel,
+        identity: raw,
+        label: (body.label ?? '').trim().slice(0, 200) || null,
+        verified: body.verified === '1',
+        // TCPA: consent is an explicit act with a timestamp, never a default.
+        consent: body.consent === '1',
+      });
+    } catch (err) {
+      return reply
+        .flash('error', err instanceof Error ? err.message : 'That identity could not be normalised.')
+        .redirect(back, 303);
+    }
+
+    await audit(req, {
+      action: 'admin.identity_link',
+      clientId: client.id,
+      entity: 'channel_identity',
+      entityId: linked.identityId,
+      meta: {
+        channel,
+        raw,
+        normalized: linked.identity,
+        verified: Boolean(linked.verifiedAt),
+        consentAt: linked.consentAt?.toISOString() ?? null,
+        movedFromClientId: existing && existing.clientId !== client.id ? existing.clientId : null,
+      },
+    });
+
+    const consentNote = linked.consentAt
+      ? ` Consent recorded ${linked.consentAt.toISOString()}.`
+      : ' No consent recorded — we can reply, but we cannot start a conversation on this identity.';
+    return reply
+      .flash('ok', `Linked ${channel} ${linked.identity} to ${client.businessName}.${consentNote}`)
+      .redirect(back, 303);
+  });
+
+  /**
+   * Consent, withdrawal and removal on an existing identity. All three are
+   * timestamped writes, because "when did they agree" is the only version of
+   * that question a TCPA complaint cares about.
+   */
+  app.post<{ Params: { id: string; identityId: string } }>(
+    '/admin/clients/:id/identities/:identityId',
+    async (req, reply) => {
+      if (!UUID_RE.test(req.params.id) || !UUID_RE.test(req.params.identityId)) {
+        return reply.callNotFound();
+      }
+      const back = `/admin/clients/${req.params.id}`;
+      const row = await db.query.channelIdentities.findFirst({
+        where: and(
+          eq(channelIdentities.id, req.params.identityId),
+          eq(channelIdentities.clientId, req.params.id),
+        ),
+      });
+      if (!row) return reply.callNotFound();
+
+      const action = ((req.body ?? {}) as Record<string, string>).action ?? '';
+      const now = new Date();
+      let message: string;
+
+      if (action === 'consent') {
+        await db
+          .update(channelIdentities)
+          .set({ consentAt: now, revokedAt: null })
+          .where(eq(channelIdentities.id, row.id));
+        message = `TCPA consent recorded for ${row.identity} at ${now.toISOString()}.`;
+      } else if (action === 'withdraw') {
+        // Same effect as an inbound STOP: consent goes, the identity stays
+        // resolvable so their next text still reaches the right client.
+        await db.update(channelIdentities).set({ consentAt: null }).where(eq(channelIdentities.id, row.id));
+        message = `Consent withdrawn for ${row.identity}. Nothing will be sent to it unprompted.`;
+      } else if (action === 'remove') {
+        // Revoked, not deleted: a deleted identity takes the provenance of
+        // everything that ever arrived on it with it.
+        await db
+          .update(channelIdentities)
+          .set({ revokedAt: now, consentAt: null })
+          .where(eq(channelIdentities.id, row.id));
+        message = `Removed ${row.identity}. Anything it sends from now on lands in quarantine.`;
+      } else if (action === 'verify') {
+        await db
+          .update(channelIdentities)
+          .set({ verifiedAt: row.verifiedAt ?? now })
+          .where(eq(channelIdentities.id, row.id));
+        message = `Marked ${row.identity} as verified.`;
+      } else {
+        return reply.flash('error', 'Unknown action.').redirect(back, 303);
+      }
+
+      await audit(req, {
+        action: `admin.identity_${action}`,
+        clientId: row.clientId,
+        entity: 'channel_identity',
+        entityId: row.id,
+        meta: { channel: row.channel, identity: row.identity, at: now.toISOString() },
+      });
+      return reply.flash('ok', message).redirect(back, 303);
+    },
+  );
 
   // ---------- Task list creation (template or custom lines) ----------
   app.post<{ Params: { id: string } }>('/admin/clients/:id/tasks', async (req, reply) => {
@@ -362,6 +546,231 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     }
     await audit(req, { action: 'admin.invoice_sync', meta: { synced } });
     return reply.flash('ok', `Synced ${synced} invoice${synced === 1 ? '' : 's'} from Stripe.`).redirect('/admin', 303);
+  });
+
+  /* ====================================================================== */
+  /* Integrations — what is connected, and what each connection unlocks      */
+  /* ====================================================================== */
+
+  /**
+   * Read-only status for every provider. **No secret value is ever put into
+   * the template locals** — `integrationRows()` reports presence booleans and
+   * variable names, never the strings themselves, so this page cannot leak a
+   * key even if somebody adds a `<%= %>` in the wrong place.
+   */
+  app.get('/admin/integrations', async (_req, reply) => {
+    const rows = await integrationRows();
+    return reply.viewPage('admin/integrations.eta', {
+      title: 'Integrations',
+      rows,
+      counts: {
+        configured: rows.filter((r) => r.liveStatus === 'configured').length,
+        error: rows.filter((r) => r.liveStatus === 'error').length,
+        notConfigured: rows.filter((r) => r.liveStatus === 'not_configured').length,
+        drifted: rows.filter((r) => r.drifted).length,
+      },
+    });
+  });
+
+  /** Re-probe one provider and write the result to `integrations`. Admin only. */
+  app.post<{ Params: { provider: string } }>(
+    '/admin/integrations/:provider/recheck',
+    { preHandler: requireAdmin },
+    async (req, reply) => {
+      const provider = req.params.provider;
+      if (!isIntegrationProvider(provider)) {
+        return reply.flash('error', 'Unknown provider.').redirect('/admin/integrations', 303);
+      }
+      const probe = await recheckIntegration(provider);
+      await audit(req, {
+        action: 'admin.integration_recheck',
+        entity: 'integrations',
+        entityId: provider,
+        // The detail line never contains a credential — see adminOverview.ts.
+        meta: { provider, status: probe.liveStatus, detail: probe.detail },
+      });
+      return reply
+        .flash(
+          probe.liveStatus === 'error' ? 'error' : 'ok',
+          `${probe.title}: ${probe.liveStatus.replace('_', ' ')} — ${probe.detail}`,
+        )
+        .redirect('/admin/integrations', 303);
+    },
+  );
+
+  /* ====================================================================== */
+  /* Categorisation rules — the compounding asset, made visible              */
+  /* ====================================================================== */
+
+  app.get('/admin/rules', async (_req, reply) => {
+    const overview = await rulesOverview();
+    return reply.viewPage('admin/rules.eta', { title: 'Rules', ...overview });
+  });
+
+  app.post<{ Params: { id: string } }>('/admin/rules/:id/toggle', async (req, reply) => {
+    if (!UUID_RE.test(req.params.id)) return reply.callNotFound();
+    const disable = ((req.body ?? {}) as Record<string, string>).disable === '1';
+    const row = await setRuleDisabled(req.params.id, disable);
+    if (!row) return reply.callNotFound();
+
+    await audit(req, {
+      action: disable ? 'admin.rule_disable' : 'admin.rule_enable',
+      clientId: row.clientId,
+      entity: 'categorization_rules',
+      entityId: row.id,
+      meta: { pattern: row.pattern, matchType: row.matchType, hitCount: row.hitCount },
+    });
+    return reply
+      .flash('ok', `${disable ? 'Disabled' : 'Re-enabled'} the rule for "${row.pattern}".`)
+      .redirect('/admin/rules', 303);
+  });
+
+  /* ====================================================================== */
+  /* AI usage and safety                                                    */
+  /* ====================================================================== */
+
+  app.get('/admin/ai', async (_req, reply) => {
+    const usage = await aiUsage();
+    return reply.viewPage('admin/ai.eta', {
+      title: 'AI usage',
+      ...usage,
+      threshold: config.AI_CONFIDENCE_THRESHOLD,
+      provider: config.AI_PROVIDER,
+    });
+  });
+
+  /* ====================================================================== */
+  /* Quarantine — inbound we could not resolve to a client                  */
+  /* ====================================================================== */
+
+  app.get('/admin/quarantine', async (_req, reply) => {
+    const [rows, clientRows] = await Promise.all([
+      quarantineQueue(),
+      db.query.clients.findMany({ orderBy: [asc(clients.businessName)] }),
+    ]);
+    return reply.viewPage('admin/quarantine.eta', {
+      title: 'Quarantine',
+      rows,
+      clientRows,
+    });
+  });
+
+  /**
+   * Claim a quarantined item for a client, optionally remembering the sender.
+   *
+   * `POST /api/intake/:id/assign` does the same thing for API callers and also
+   * replays the payload through the pipeline; it answers JSON, which is the
+   * wrong thing to hand a browser mid-form. The identity rule itself is not
+   * duplicated — `linkIdentity` is the same helper that endpoint calls.
+   */
+  app.post<{ Params: { id: string } }>('/admin/quarantine/:id/assign', async (req, reply) => {
+    if (!UUID_RE.test(req.params.id)) return reply.callNotFound();
+    const body = (req.body ?? {}) as Record<string, string>;
+    const clientId = (body.client_id ?? '').trim();
+    if (!UUID_RE.test(clientId)) {
+      return reply.flash('error', 'Pick which client this belongs to.').redirect('/admin/quarantine', 303);
+    }
+
+    const [item, client] = await Promise.all([
+      db.query.intakeItems.findFirst({ where: eq(intakeItems.id, req.params.id) }),
+      db.query.clients.findFirst({ where: eq(clients.id, clientId) }),
+    ]);
+    if (!item) return reply.callNotFound();
+    if (!client) {
+      return reply.flash('error', 'That client no longer exists.').redirect('/admin/quarantine', 303);
+    }
+    if (item.status !== 'quarantined') {
+      return reply
+        .flash('error', `That item is ${item.status}, not quarantined — somebody else already claimed it.`)
+        .redirect('/admin/quarantine', 303);
+    }
+
+    // Remembering is opt-in: a one-off forward from a client's accountant
+    // should not permanently bind that address to the client.
+    const remember = body.remember === '1' && Boolean(item.senderIdentity);
+    if (remember) {
+      await linkIdentity({
+        clientId,
+        channel: item.channel,
+        identity: item.senderIdentity!,
+        label: (body.label ?? '').trim().slice(0, 200) || null,
+        verified: true,
+        consent: body.consent === '1',
+      });
+    }
+
+    await db
+      .update(intakeItems)
+      .set({ clientId, status: 'received', quarantineReason: null })
+      .where(eq(intakeItems.id, item.id));
+
+    await audit(req, {
+      action: 'intake.assigned',
+      clientId,
+      entity: 'intake_item',
+      entityId: item.id,
+      meta: {
+        channel: item.channel,
+        senderIdentity: item.senderIdentity,
+        rememberIdentity: remember,
+        via: 'admin.quarantine',
+      },
+    });
+
+    return reply
+      .flash(
+        'ok',
+        `Assigned to ${client.businessName}.${remember ? ' Next message from that sender resolves on its own.' : ''}`,
+      )
+      .redirect('/admin/quarantine', 303);
+  });
+
+  /* ====================================================================== */
+  /* System health                                                          */
+  /* ====================================================================== */
+
+  app.get('/admin/health', async (_req, reply) => {
+    const health = await systemHealth();
+    return reply.viewPage('admin/health.eta', { title: 'System health', ...health });
+  });
+
+  /** Recompute every active client's books health score. */
+  app.post('/admin/health/recompute', async (req, reply) => {
+    const results = await recomputeAll();
+    await audit(req, {
+      action: 'admin.health_recompute',
+      entity: 'health_scores',
+      meta: { clients: results.length },
+    });
+    return reply
+      .flash('ok', `Recomputed the books health score for ${results.length} client${results.length === 1 ? '' : 's'}.`)
+      .redirect('/admin/health', 303);
+  });
+
+  /**
+   * Run the retention report. Dry run only — this page reports what is
+   * eligible for deletion; the deletion itself stays a deliberate act on the
+   * command line (`node dist/lib/retention.js --apply`), where it is reviewable
+   * and does not hang off a browser session.
+   */
+  app.post('/admin/health/retention', { preHandler: requireAdmin }, async (req, reply) => {
+    const report = await runRetention({ dryRun: true });
+    await audit(req, {
+      action: RETENTION_AUDIT_ACTION,
+      entity: 'retention',
+      meta: {
+        dryRun: true,
+        totalMatched: report.totalMatched,
+        hadErrors: report.hadErrors,
+        buckets: report.buckets.map((b) => ({ name: b.name, matched: b.matched, windowDays: b.windowDays })),
+      },
+    });
+    return reply
+      .flash(
+        report.hadErrors ? 'error' : 'ok',
+        `Retention dry run: ${report.totalMatched} row${report.totalMatched === 1 ? '' : 's'} eligible across ${report.buckets.length} buckets. Nothing was deleted.`,
+      )
+      .redirect('/admin/health', 303);
   });
 
   // ---------- Audit log (admin only) ----------

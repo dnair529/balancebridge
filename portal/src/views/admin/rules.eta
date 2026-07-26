@@ -1,0 +1,88 @@
+<% layout('../layout') %>
+<div class="page-head">
+  <p><a class="link" href="/admin">← Admin</a></p>
+  <h1>Categorization rules</h1>
+  <p class="sub">
+    Every human correction becomes a durable rule, so a client costs materially
+    less to serve in year two than in year one. This page is where that asset is
+    visible — and where a rule that has gone wrong gets switched off.
+  </p>
+</div>
+
+<section class="card">
+  <div class="card-head"><h2>Resolved without a model call</h2></div>
+  <p>
+    <span class="ws-num"><%= it.share.pct %>%</span>
+    of categorizations were resolved by rules with no model call —
+    <span class="strong"><%= it.share.ruleRuns %></span> rule hits against
+    <span class="strong"><%= it.share.modelRuns %></span> model calls across
+    <%= it.share.categorizeRuns %> categorization run<%= it.share.categorizeRuns === 1 ? '' : 's' %>.
+  </p>
+  <p class="muted small">
+    Counted from <code>ai_runs</code>, where a deterministic rule hit is logged
+    with provider <code>rules-engine</code> and a model call with the provider's
+    own name. A rule hit always beats the model, so this number going up is the
+    margin story.
+  </p>
+</section>
+
+<div class="stat-grid">
+  <span class="stat-card"><span class="stat-num"><%= it.totals.rules %></span><span class="stat-label">Rules</span></span>
+  <span class="stat-card"><span class="stat-num"><%= it.totals.active %></span><span class="stat-label">Active</span></span>
+  <span class="stat-card"><span class="stat-num"><%= it.totals.disabled %></span><span class="stat-label">Disabled</span></span>
+  <span class="stat-card"><span class="stat-num"><%= it.totals.hits %></span><span class="stat-label">Lifetime hits</span></span>
+</div>
+
+<% if (it.groups.length === 0) { %>
+  <section class="card"><p class="empty">No rules yet. They are learned the first time a bookkeeper categorizes a vendor group in the workspace.</p></section>
+<% } %>
+
+<% it.groups.forEach(function (group) { %>
+<section class="card">
+  <div class="card-head">
+    <h2>
+      <% if (group.clientId) { %>
+        <a class="link" href="/admin/clients/<%= group.clientId %>"><%= group.clientName %></a>
+      <% } else { %>
+        <%= group.clientName %>
+      <% } %>
+    </h2>
+    <span class="muted small"><%= group.active %> active · <%= group.hits %> hits</span>
+  </div>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Pattern</th>
+        <th class="hide-sm">Match</th>
+        <th>Category</th>
+        <th>Source</th>
+        <th class="tabular">Hits</th>
+        <th class="hide-sm">Last hit</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% group.rules.forEach(function (rule) { %>
+      <tr>
+        <td class="strong"><%= rule.pattern %></td>
+        <td class="hide-sm muted"><%= rule.matchType %></td>
+        <td><%= rule.categoryName %> <span class="muted small"><%= rule.categoryKind %></span></td>
+        <td>
+          <span class="chip"><%= rule.source %></span>
+          <% if (rule.disabledAt) { %><span class="chip status-void">disabled</span><% } %>
+        </td>
+        <td class="tabular"><%= rule.hitCount %></td>
+        <td class="hide-sm muted small"><%= it.fmtDate(rule.lastHitAt) %></td>
+        <td class="row-actions">
+          <form method="post" action="/admin/rules/<%= rule.id %>/toggle" class="inline">
+            <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+            <input type="hidden" name="disable" value="<%= rule.disabledAt ? '0' : '1' %>">
+            <button class="btn btn-ghost btn-sm" type="submit"><%= rule.disabledAt ? 'Enable' : 'Disable' %></button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+<% }) %>

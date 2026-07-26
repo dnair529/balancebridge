@@ -1,0 +1,70 @@
+<% layout('../layout') %>
+<div class="page-head">
+  <p><a class="link" href="/admin">← Admin</a></p>
+  <h1>Integrations</h1>
+  <p class="sub">
+    What is connected, what each connection unlocks, and how to connect it.
+    Credentials live in the environment and are never stored in the database —
+    this page shows whether a variable is <em>set</em>, never what it is set to.
+  </p>
+</div>
+
+<div class="stat-grid">
+  <span class="stat-card"><span class="stat-num"><%= it.counts.configured %></span><span class="stat-label">Configured</span></span>
+  <span class="stat-card"><span class="stat-num"><%= it.counts.error %></span><span class="stat-label">Half configured</span></span>
+  <span class="stat-card"><span class="stat-num"><%= it.counts.notConfigured %></span><span class="stat-label">Not configured</span></span>
+  <span class="stat-card"><span class="stat-num"><%= it.counts.drifted %></span><span class="stat-label">Stored status is stale</span></span>
+</div>
+
+<% it.rows.forEach(function (row) { %>
+<section class="card">
+  <div class="card-head">
+    <h2><%= row.title %></h2>
+    <span class="chip status-<%= row.liveStatus === 'configured' ? 'paid' : row.liveStatus === 'error' ? 'past' : 'void' %>"><%= row.liveStatus.replace('_', ' ') %></span>
+  </div>
+
+  <p><%= row.detail %></p>
+  <p class="muted small"><span class="strong">What this unlocks:</span> <%= row.unlocks %></p>
+  <p class="muted small"><span class="strong">How to configure:</span> <%= row.howTo %></p>
+
+  <p class="small">
+    <% row.env.forEach(function (e) { %>
+      <span class="chip"><%= e.name %>: <%= e.present ? 'set' : 'not set' %><%= e.required && !e.present ? ' · required' : '' %></span>
+    <% }) %>
+  </p>
+
+  <p class="muted small">
+    Last recorded check:
+    <% if (row.lastCheckedAt) { %>
+      <span class="strong"><%= row.recordedStatus.replace('_', ' ') %></span> at <%= it.fmtDateTime(row.lastCheckedAt) %>
+      <% if (row.drifted) { %> · <span class="chip">the environment has changed since</span><% } %>
+    <% } else { %>
+      never — press re-check to record one.
+    <% } %>
+  </p>
+  <% if (row.lastError) { %>
+    <p class="small"><span class="strong">Last error:</span> <%= row.lastError %></p>
+  <% } %>
+
+  <% if (it.user.role === 'admin') { %>
+    <div class="action-row">
+      <form method="post" action="/admin/integrations/<%= row.provider %>/recheck" class="inline">
+        <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+        <button class="btn btn-ghost btn-sm" type="submit">Re-check <%= row.provider %></button>
+      </form>
+    </div>
+  <% } %>
+</section>
+<% }) %>
+
+<section class="card">
+  <div class="card-head"><h2>Why there are no secrets on this page</h2></div>
+  <p class="muted small">
+    A credential that can be read out of an admin screen is a credential that
+    leaves the building in a screenshot. Everything here is derived from
+    presence checks: the probe asks "is this variable non-empty", records
+    configured / not configured / error against the <code>integrations</code>
+    table, and never reads the value into a template. Rotating a key is an
+    environment change followed by a re-check, not an edit here.
+  </p>
+</section>

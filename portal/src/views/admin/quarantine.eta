@@ -1,0 +1,74 @@
+<% layout('../layout') %>
+<div class="page-head">
+  <p><a class="link" href="/admin">← Admin</a></p>
+  <h1>Quarantine</h1>
+  <p class="sub">
+    Everything that arrived from a sender we could not name. Nothing is guessed
+    onto a client: wrong client attribution in financial records is a serious
+    incident, so an unrecognised sender waits here for a human instead.
+  </p>
+</div>
+
+<% if (it.rows.length === 0) { %>
+  <section class="card"><p class="empty">Nothing in quarantine. Every inbound item resolved to a client on its own.</p></section>
+<% } else { %>
+
+<section class="card">
+  <div class="card-head">
+    <h2><span class="ws-num"><%= it.rows.length %></span> item<%= it.rows.length === 1 ? '' : 's' %> waiting</h2>
+    <span class="muted small">oldest at the bottom</span>
+  </div>
+  <p class="muted small">
+    Assigning an item files it against the client. Tick "remember this sender"
+    and the next message from that number or address resolves on its own — that
+    is what stops this queue refilling with the same sender every week.
+  </p>
+</section>
+
+<% it.rows.forEach(function (row) { %>
+<section class="card">
+  <div class="card-head">
+    <h2><%= row.senderIdentity || 'unknown sender' %></h2>
+    <span class="chip"><%= row.channel %></span>
+  </div>
+  <p class="muted small">
+    Received <%= it.fmtDateTime(row.receivedAt) %>
+    <% if (row.mime) { %> · <%= row.mime %><% } %>
+    <% if (row.sizeBytes) { %> · <%= it.fmtBytes(row.sizeBytes) %><% } %>
+    <% if (row.quarantineReason) { %> · <%= row.quarantineReason %><% } %>
+  </p>
+  <% if (row.preview) { %>
+    <p><span class="strong">Message:</span> <%= row.preview %></p>
+  <% } %>
+  <% if (row.knownElsewhere) { %>
+    <p class="small"><span class="chip status-past">this identity is already registered to a client</span>
+    <span class="muted">— it may be revoked, or registered on a different channel.</span></p>
+  <% } %>
+
+  <form method="post" action="/admin/quarantine/<%= row.id %>/assign" class="stack">
+    <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+    <div class="field-grid">
+      <label class="field"><span>Assign to client</span>
+        <select name="client_id" required>
+          <option value="">Pick a client…</option>
+          <% it.clientRows.forEach(function (c) { %>
+            <option value="<%= c.id %>"><%= c.businessName %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label class="field"><span>Label for this sender (optional)</span>
+        <input type="text" name="label" placeholder="Owner's mobile, office email…">
+      </label>
+    </div>
+    <% if (row.senderIdentity) { %>
+      <label class="checkbox"><input type="checkbox" name="remember" value="1" checked> Remember this sender for that client</label>
+      <label class="checkbox"><input type="checkbox" name="consent" value="1"> They have given consent to be messaged on it (TCPA — records a timestamp)</label>
+    <% } else { %>
+      <p class="muted small">No sender identity was captured, so there is nothing to remember.</p>
+    <% } %>
+    <button class="btn btn-primary btn-sm" type="submit">Assign</button>
+  </form>
+</section>
+<% }) %>
+
+<% } %>
