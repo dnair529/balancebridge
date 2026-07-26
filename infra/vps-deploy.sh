@@ -111,9 +111,12 @@ COMMIT=$(git -C "$ENV_DIR/repo" rev-parse --short HEAD)
 
 # ---------- 3. build the static site (inside a container — nothing installed on the host) ----------
 log "Building marketing site @ $COMMIT"
+# node_modules is gitignored, so `git clean -fd` leaves it behind between deploys
+# and `npm ci` then fails with ENOTEMPTY trying to remove it across the bind mount.
+# Wipe it inside the container, where the removal is a plain local unlink.
 docker run --rm -v "$ENV_DIR/repo/site":/app -w /app \
   -e SITE_URL="https://$SITE_HOST" -e npm_config_update_notifier=false \
-  node:22-alpine sh -c 'npm ci --no-fund --no-audit --loglevel=error && npm run build' \
+  node:22-alpine sh -c 'rm -rf node_modules dist && npm ci --no-fund --no-audit --loglevel=error && npm run build' \
   || die "site build failed"
 
 rm -rf "$ENV_DIR/site-dist.prev"
