@@ -15,6 +15,13 @@
       "when": 1785033529187,
       "tag": "0001_round_the_call",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785104934936,
+      "tag": "0002_dry_scarlet_spider",
+      "breakpoints": true
     }
   ]
 }

@@ -29,10 +29,42 @@ export const clients = pgTable('clients', {
   contactName: text('contact_name'),
   email: text('email'),
   phone: text('phone'),
+  /** pending = signed up, not yet reviewed/assigned. Gates bookkeeper messaging. */
   status: text('status').notNull().default('active'),
   stripeCustomerId: text('stripe_customer_id'),
   notes: text('notes'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  // --- v2: signup + engagement ---
+  legalName: text('legal_name'),
+  entityType: text('entity_type', {
+    enum: ['sole_prop', 'llc', 's_corp', 'c_corp', 'partnership', 'nonprofit', 'other'],
+  }),
+  /** Encrypted at rest — see lib/crypto. Never logged, never rendered in full. */
+  einEncrypted: text('ein_encrypted'),
+  industry: text('industry'),
+  formationState: text('formation_state'),
+  addressLine1: text('address_line1'),
+  addressLine2: text('address_line2'),
+  city: text('city'),
+  state: text('state'),
+  postalCode: text('postal_code'),
+  website: text('website'),
+  fiscalYearEnd: text('fiscal_year_end'),
+  /** Qualification captured at signup — drives the suggested price band. */
+  booksStatus: text('books_status', { enum: ['current', 'behind', 'never'] }),
+  monthsBehind: integer('months_behind'),
+  txnVolumeBand: text('txn_volume_band'),
+  revenueBand: text('revenue_band'),
+  currentSoftware: text('current_software'),
+  cpaName: text('cpa_name'),
+  cpaEmail: text('cpa_email'),
+  plan: text('plan', { enum: ['essentials', 'growth', 'controller_plus'] }),
+  monthlyFeeCents: integer('monthly_fee_cents'),
+  /** Business day of month the close is promised by. Drives every SLA. */
+  closeTargetDay: integer('close_target_day').default(10),
+  heardAbout: text('heard_about'),
+  activatedAt: timestamp('activated_at', { withTimezone: true }),
+  offboardedAt: timestamp('offboarded_at', { withTimezone: true }),
 });
 
 export const users = pgTable('users', {
@@ -43,6 +75,9 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   name: text('name').notNull(),
   role: text('role', { enum: ['client', 'staff', 'admin'] }).notNull(),
+  /** For client-side users only: what they can see within their own company. */
+  clientAccess: text('client_access', { enum: ['owner', 'full', 'contributor'] }),
+  invitedBy: uuid('invited_by'),
   totpSecret: text('totp_secret'),
   totpEnabled: boolean('totp_enabled').notNull().default(false),
   disabled: boolean('disabled').notNull().default(false),
@@ -751,4 +786,176 @@ export const integrations = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [uniqueIndex('integrations_uq').on(t.clientId, t.provider)],
+);
+
+// ============================================================================
+// v2: signup, assignment-based access, oversight
+// ----------------------------------------------------------------------------
+// The governing rule: ASSIGNMENT IS THE ACCESS CONTROL. A staff user sees a
+// client only when an active row exists in client_assignments. There is exactly
+// one question to answer, and it is auditable and reversible.
+// ============================================================================
+
+/** Who is assigned to a client, in what capacity. Access derives from this. */
+export const clientAssignments = pgTable(
+  'client_assignments',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    clientId: uuid('client_id').notNull().references(() => clients.id),
+    userId: uuid('user_id').notNull().references(() => users.id),
+    /** primary = the face the client sees. backup = instant cover. reviewer = quality gate. */
+    role: text('role', { enum: ['primary', 'backup', 'reviewer'] }).notNull(),
+    assignedBy: uuid('assigned_by').notNull().references(() => users.id),
+    assignedAt: timestamp('assigned_at', { withTimezone: true }).notNull().defaultNow(),
+    /** Set = access has stopped. Rows are never deleted; history is the audit trail. */
+    endedAt: timestamp('ended_at', { withTimezone: true }),
+    endedReason: text('ended_reason'),
+  },
+  (t) => [
+    index('assignments_user_active_idx').on(t.userId, t.endedAt),
+    index('assignments_client_active_idx').on(t.clientId, t.endedAt),
+  ],
+);
+
+/** Resumable onboarding wizard state. Answers stored per section. */
+export const clientOnboarding = pgTable(
+  'client_onboarding',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    clientId: uuid('client_id').notNull().references(() => clients.id).unique(),
+    /** a..g — which sections are complete */
+    completedSections: jsonb('completed_sections').notNull().default([]),
+    answers: jsonb('answers').notNull().default({}),
+    submittedAt: timestamp('submitted_at', { withTimezone: true }),
+    lastSavedAt: timestamp('last_saved_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+);
+
+/**
+ * Accounts we will reconcile. NEVER stores a full account number or any
+ * online-banking credential — institution, nickname, type and last four only.
+ */
+export const clientFinancialAccounts = pgTable(
+  'client_financial_accounts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    clientId: uuid('client_id').notNull().references(() => clients.id),
+    institution: text('institution').notNull(),
+    nickname: text('nickname'),
+    kind: text('kind', {
+      enum: ['bank', 'credit_card', 'loan', 'merchant', 'payroll', 'other'],
+    }).notNull(),
+    /** Exactly four digits. Validated at the service layer. */
+    last4: text('last4'),
+    active: boolean('active').notNull().default(true),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('client_fin_accounts_idx').on(t.clientId)],
+);
+
+/** Alerts. Raised on TRANSITION, never on state — state alerts fire forever. */
+export const alerts = pgTable(
+  'alerts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    kind: text('kind').notNull(),
+    severity: text('severity', { enum: ['info', 'warning', 'critical'] })
+      .notNull()
+      .default('warning'),
+    clientId: uuid('client_id').references(() => clients.id),
+    /** Who should act. Null = firm-wide / admin. */
+    userId: uuid('user_id').references(() => users.id),
+    title: text('title').notNull(),
+    detail: text('detail'),
+    actionUrl: text('action_url'),
+    status: text('status', { enum: ['open', 'acknowledged', 'resolved', 'superseded'] })
+      .notNull()
+      .default('open'),
+    /** Held until quiet hours end; nothing wakes anyone for bookkeeping. */
+    deliverAfter: timestamp('deliver_after', { withTimezone: true }),
+    deliveredAt: timestamp('delivered_at', { withTimezone: true }),
+    acknowledgedBy: uuid('acknowledged_by').references(() => users.id),
+    acknowledgedAt: timestamp('acknowledged_at', { withTimezone: true }),
+    resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('alerts_open_idx').on(t.status, t.createdAt)],
+);
+
+export const alertPreferences = pgTable(
+  'alert_preferences',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').notNull().references(() => users.id),
+    kind: text('kind').notNull(),
+    mode: text('mode', { enum: ['immediate', 'digest', 'off'] }).notNull().default('digest'),
+  },
+  (t) => [uniqueIndex('alert_prefs_uq').on(t.userId, t.kind)],
+);
+
+/** RAG history. Every transition recorded with its reasons and who was blocked. */
+export const clientStatusHistory = pgTable(
+  'client_status_history',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    clientId: uuid('client_id').notNull().references(() => clients.id),
+    status: text('status', { enum: ['green', 'yellow', 'red'] }).notNull(),
+    previousStatus: text('previous_status', { enum: ['green', 'yellow', 'red'] }),
+    /** Per-dimension scores: close, responsiveness, books, risk, relationship, commercial */
+    dimensions: jsonb('dimensions').notNull(),
+    /** Human-readable reasons — a colour without a reason is useless. */
+    reasons: jsonb('reasons').notNull(),
+    /** Never penalise a bookkeeper for a client's behaviour. */
+    blockedBy: text('blocked_by', { enum: ['firm', 'client', 'external', 'none'] })
+      .notNull()
+      .default('none'),
+    computedAt: timestamp('computed_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('status_history_client_idx').on(t.clientId, t.computedAt)],
+);
+
+/** Configurable thresholds so tuning never requires a deploy. */
+export const healthThresholds = pgTable(
+  'health_thresholds',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    dimension: text('dimension').notNull().unique(),
+    yellowAt: integer('yellow_at').notNull(),
+    redAt: integer('red_at').notNull(),
+    unit: text('unit').notNull().default('days'),
+    updatedBy: uuid('updated_by').references(() => users.id),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+);
+
+/** Nightly rollup so scorecards stay fast. Outcomes first; activity is context. */
+export const staffMetricsDaily = pgTable(
+  'staff_metrics_daily',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').notNull().references(() => users.id),
+    onDate: date('on_date').notNull(),
+    // outcomes
+    closesDue: integer('closes_due').notNull().default(0),
+    closesOnTime: integer('closes_on_time').notNull().default(0),
+    preflightFirstPass: integer('preflight_first_pass').notNull().default(0),
+    preflightAttempts: integer('preflight_attempts').notNull().default(0),
+    reviewerRejections: integer('reviewer_rejections').notNull().default(0),
+    medianReplyMinutes: integer('median_reply_minutes'),
+    slaBreaches: integer('sla_breaches').notNull().default(0),
+    // throughput
+    itemsCleared: integer('items_cleared').notNull().default(0),
+    txnsCategorized: integer('txns_categorized').notNull().default(0),
+    ruleResolved: integer('rule_resolved').notNull().default(0),
+    aiAccepted: integer('ai_accepted').notNull().default(0),
+    aiOverridden: integer('ai_overridden').notNull().default(0),
+    // capacity & wellbeing — never a score
+    activeClients: integer('active_clients').notNull().default(0),
+    minutesWorked: integer('minutes_worked').notNull().default(0),
+    sessionsCount: integer('sessions_count').notNull().default(0),
+    outOfHoursMinutes: integer('out_of_hours_minutes').notNull().default(0),
+    /** Weighted by volume, accounts, backlog, complexity — raw comparison is dishonest. */
+    difficultyIndex: integer('difficulty_index').notNull().default(100),
+  },
+  (t) => [uniqueIndex('staff_metrics_uq').on(t.userId, t.onDate)],
 );
