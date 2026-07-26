@@ -1,0 +1,165 @@
+<% layout('../layout') %>
+<%
+  /* The morning screen. One row per client, and every colour states its reason
+     and names who is blocked — a RAG chip on its own would be worse than no
+     chip at all, because it punishes a bookkeeper for a client's behaviour. */
+  const f = it.filters;
+  const qs = function (over) {
+    const p = [];
+    const merged = { status: f.status, bookkeeper: f.bookkeeper, blocked: f.blocked, ...over };
+    Object.keys(merged).forEach(function (k) { if (merged[k]) p.push(k + '=' + encodeURIComponent(merged[k])); });
+    return p.length ? '/admin/portfolio?' + p.join('&') : '/admin/portfolio';
+  };
+  const hours = function (min) { return (Math.round(min / 6) / 10).toFixed(1); };
+%>
+
+<div class="ws-head">
+  <div>
+    <p><a class="link" href="/admin">← Admin</a></p>
+    <h1>Portfolio</h1>
+    <p class="ws-count">
+      Every engagement, worst first. <strong>Overall status is the worst dimension, never an average</strong> —
+      one red makes the client red, because averaging hides exactly the thing you need to see.
+    </p>
+  </div>
+  <div class="ws-filters" style="margin:0">
+    <a class="ws-chip" href="/admin/pending">Pending <span class="n"><%= it.pendingCount %></span></a>
+    <a class="ws-chip" href="/admin/staff">Bookkeepers</a>
+    <a class="ws-chip" href="/admin/thresholds">Thresholds</a>
+    <a class="ws-chip" href="/alerts">Alerts</a>
+  </div>
+</div>
+
+<div class="ws-facts">
+  <span class="ws-fact"><span class="v"><%= it.counts.red %></span><span class="k">red</span></span>
+  <span class="ws-fact"><span class="v"><%= it.counts.yellow %></span><span class="k">yellow</span></span>
+  <span class="ws-fact"><span class="v"><%= it.counts.green %></span><span class="k">green</span></span>
+  <span class="ws-fact"><span class="v"><%= it.counts.firmBlocked %></span><span class="k">blocked on us</span></span>
+  <span class="ws-fact"><span class="v"><%= it.counts.clientBlocked %></span><span class="k">blocked on the client</span></span>
+  <span class="ws-fact"><span class="v"><%= it.counts.noBackup %></span><span class="k">without a backup</span></span>
+</div>
+
+<% if (it.counts.unassigned > 0 || it.counts.noBackup > 0) { %>
+<section class="ws-strip">
+  <h2>Cover gaps</h2>
+  <ul class="ws-strip-list">
+    <% if (it.counts.unassigned > 0) { %>
+      <li><span class="ws-num"><%= it.counts.unassigned %></span> active client<%= it.counts.unassigned === 1 ? '' : 's' %> with no primary — nobody can see them, and nobody is working them.</li>
+    <% } %>
+    <% if (it.counts.noBackup > 0) { %>
+      <li><span class="ws-num"><%= it.counts.noBackup %></span> without a named backup. <span class="why">A single bookkeeper per client is a single point of failure — illness, holiday, resignation.</span></li>
+    <% } %>
+  </ul>
+</section>
+<% } %>
+
+<section class="card">
+  <div class="card-head"><h2>Filters</h2></div>
+  <div class="ws-filters">
+    <a class="ws-chip<%= f.status ? '' : ' active' %>" href="<%= qs({ status: null }) %>">All statuses</a>
+    <a class="ws-chip<%= f.status === 'red' ? ' active' : '' %>" href="<%= qs({ status: 'red' }) %>">Red</a>
+    <a class="ws-chip<%= f.status === 'yellow' ? ' active' : '' %>" href="<%= qs({ status: 'yellow' }) %>">Yellow</a>
+    <a class="ws-chip<%= f.status === 'green' ? ' active' : '' %>" href="<%= qs({ status: 'green' }) %>">Green</a>
+  </div>
+  <div class="ws-filters">
+    <a class="ws-chip<%= f.blocked ? '' : ' active' %>" href="<%= qs({ blocked: null }) %>">Any blocker</a>
+    <a class="ws-chip<%= f.blocked === 'firm' ? ' active' : '' %>" href="<%= qs({ blocked: 'firm' }) %>">Blocked on us</a>
+    <a class="ws-chip<%= f.blocked === 'client' ? ' active' : '' %>" href="<%= qs({ blocked: 'client' }) %>">Blocked on the client</a>
+    <a class="ws-chip<%= f.blocked === 'external' ? ' active' : '' %>" href="<%= qs({ blocked: 'external' }) %>">External</a>
+  </div>
+  <div class="ws-filters">
+    <a class="ws-chip<%= f.bookkeeper ? '' : ' active' %>" href="<%= qs({ bookkeeper: null }) %>">Everyone</a>
+    <% it.staff.forEach(function (s) { %>
+      <a class="ws-chip<%= f.bookkeeper === s.id ? ' active' : '' %>" href="<%= qs({ bookkeeper: s.id }) %>"><%= s.name %> <span class="n"><%= s.activeClients %></span></a>
+    <% }) %>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2><%= it.rows.length %> client<%= it.rows.length === 1 ? '' : 's' %></h2>
+    <span class="muted small">Sorted worst first, then by time stuck</span>
+  </div>
+
+  <% if (it.rows.length === 0) { %>
+    <p class="empty">No client matches those filters.</p>
+  <% } else { %>
+  <table class="ws-table">
+    <thead>
+      <tr>
+        <th>Client</th>
+        <th>Status &amp; reason</th>
+        <th>Trend</th>
+        <th class="num">In status</th>
+        <th>Primary</th>
+        <th class="num">Days to close</th>
+        <th>Blocked by</th>
+        <th class="num">Effort vs fee</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% it.rows.forEach(function (r) { %>
+      <tr class="<%= r.status === 'red' ? 'flagged' : '' %>">
+        <td class="strong">
+          <a class="link" href="/admin/portfolio/<%= r.clientId %>"><%= r.businessName %></a>
+          <% if (r.plan) { %><span class="chip"><%= r.plan.replace('_', ' ') %></span><% } %>
+        </td>
+        <td>
+          <span class="chip <%= r.chip %>"><%= r.status %></span>
+          <div class="muted small"><%= r.reason %></div>
+        </td>
+        <td class="<%= r.trend === 'degrading' ? 'ws-risk-missed' : (r.trend === 'improving' ? '' : 'muted') %>">
+          <%= r.trendGlyph %> <span class="small"><%= r.trend %></span>
+        </td>
+        <td class="num"><%= r.timeInStatusDays === null ? '—' : r.timeInStatusDays + 'd' %></td>
+        <td>
+          <% if (r.primaryName) { %>
+            <%= r.primaryName %>
+            <% if (r.backupName) { %><div class="muted small">backup <%= r.backupName %></div><% } else { %><div class="ws-risk-critical small">no backup</div><% } %>
+          <% } else { %>
+            <span class="ws-risk-missed">unassigned</span>
+          <% } %>
+        </td>
+        <td class="num <%= (r.daysToClose !== null && r.daysToClose < 0) ? 'ws-risk-missed' : '' %>">
+          <%= r.daysToClose === null ? '—' : r.daysToClose %>
+        </td>
+        <td>
+          <% if (r.blockedBy === 'firm') { %><span class="chip sev-medium">Us</span>
+          <% } else if (r.blockedBy === 'client') { %><span class="chip sev-low">Client</span>
+          <% } else if (r.blockedBy === 'external') { %><span class="chip sev-low">External</span>
+          <% } else { %><span class="muted">—</span><% } %>
+        </td>
+        <td class="num">
+          <% if (r.effortPct === null) { %><span class="muted">—</span>
+          <% } else { %>
+            <span class="<%= r.effortPct >= 200 ? 'ws-risk-missed' : (r.effortPct >= 150 ? 'ws-risk-critical' : '') %>"><%= r.effortPct %>%</span>
+            <div class="muted small"><%= hours(r.effortMinutes90) %>h / <%= it.fmtMoney(r.feeCents90) %></div>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Recent transitions</h2>
+    <span class="muted small">Written only when the colour actually changed</span>
+  </div>
+  <% if (it.transitions.length === 0) { %>
+    <p class="empty">Nothing has changed colour yet. Run the nightly job to establish a baseline.</p>
+  <% } else { %>
+    <ul class="ws-strip-list">
+      <% it.transitions.forEach(function (t) { %>
+        <li>
+          <span class="muted small"><%= it.fmtDateTime(t.computedAt) %></span>
+          <a class="link" href="/admin/portfolio/<%= t.clientId %>"><%= t.businessName %></a>
+          <%= t.previousStatus || 'new' %> → <strong><%= t.status %></strong>
+          <span class="why">blocked by <%= t.blockedBy %></span>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>

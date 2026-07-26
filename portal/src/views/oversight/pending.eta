@@ -1,0 +1,135 @@
+<% layout('../layout') %>
+<%
+  /* Stage 3 — admin review and assignment. Read the profile and the complexity
+     assessment, confirm or override the suggested price, staff the engagement,
+     activate. Only an admin can do any of this. */
+%>
+
+<div class="ws-head">
+  <div>
+    <p><a class="link" href="/admin/portfolio">← Portfolio</a></p>
+    <h1>Pending signups</h1>
+    <p class="ws-count">
+      A pending account can log in, finish onboarding and upload documents — but has no bookkeeper to message.
+      Activation is the moment that changes, on both sides at once.
+    </p>
+  </div>
+</div>
+
+<% if (it.pending.length === 0) { %>
+  <section class="card"><p class="empty">Nothing waiting. Every signup has been reviewed.</p></section>
+<% } %>
+
+<% it.pending.forEach(function (p) { %>
+<section class="card">
+  <div class="card-head">
+    <h2><%= p.client.businessName %></h2>
+    <span class="muted small">Signed up <%= it.fmtDate(p.signedUpAt) %> · onboarding <%= p.onboardingPercent %>% (<%= p.sectionsDone %>/7)<%= p.submitted ? ' · submitted' : '' %></span>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <h3 class="small strong">What they told us</h3>
+      <table class="table tabular">
+        <tbody>
+          <tr><td class="muted">Contact</td><td><%= p.client.contactName || '—' %><% if (p.contactEmail) { %> · <span class="muted"><%= p.contactEmail %></span><% } %></td></tr>
+          <tr><td class="muted">Industry</td><td><%= p.client.industry || 'not stated' %></td></tr>
+          <tr><td class="muted">Books status</td><td><%= p.client.booksStatus || 'not stated' %></td></tr>
+          <tr><td class="muted">Monthly volume</td><td><%= p.client.txnVolumeBand || 'not stated' %></td></tr>
+          <tr><td class="muted">Months behind</td><td><%= p.monthsBehind %></td></tr>
+          <tr><td class="muted">Accounts to reconcile</td><td><%= p.accountCount %></td></tr>
+          <tr><td class="muted">Current software</td><td><%= p.client.currentSoftware || 'not stated' %></td></tr>
+          <tr><td class="muted">Services wanted</td><td><%= p.services.length ? p.services.join(', ') : 'not yet chosen' %></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div>
+      <h3 class="small strong">Complexity assessment</h3>
+      <ul class="list">
+        <% p.complexity.forEach(function (c) { %>
+          <li class="list-row">
+            <span><%= c.label %></span>
+            <span class="<%= c.notable ? 'ws-risk-critical' : 'muted' %>"><%= c.value %></span>
+          </li>
+        <% }) %>
+      </ul>
+
+      <h3 class="small strong">Suggested plan</h3>
+      <p>
+        <span class="chip status-active"><%= p.suggestion.planLabel %></span>
+        <strong><%= it.fmtMoney(p.suggestion.monthlyFeeCents) %></strong> / month
+        <span class="muted small">· complexity score <%= p.suggestion.score %> · close by business day <%= p.suggestion.closeTargetDay %></span>
+      </p>
+      <% if (p.suggestion.catchUpFeeCents > 0) { %>
+        <p class="muted small">Catch-up project <%= it.fmtMoney(p.suggestion.catchUpFeeCents) %> — 50% at signature, 50% at delivery.</p>
+      <% } %>
+      <ul class="list">
+        <% p.suggestion.reasons.forEach(function (r) { %><li class="muted small"><%= r %></li><% }) %>
+      </ul>
+      <p class="muted small">A starting point you can argue with, not an oracle. Override anything below.</p>
+    </div>
+  </div>
+
+  <hr class="rule">
+
+  <form method="post" action="/admin/pending/<%= p.client.id %>/activate" class="stack">
+    <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+    <div class="field-grid">
+      <label class="field">
+        <span>Plan *</span>
+        <select name="plan" required>
+          <% it.plans.forEach(function (pl) { %>
+            <option value="<%= pl %>"<%= pl === p.suggestion.plan ? ' selected' : '' %>><%= pl.replace('_', ' ') %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label class="field">
+        <span>Monthly fee (USD) *</span>
+        <input type="number" name="monthly_fee" min="0" step="1" required value="<%= Math.round(p.suggestion.monthlyFeeCents / 100) %>">
+      </label>
+      <label class="field">
+        <span>Close target — business day *</span>
+        <input type="number" name="close_target_day" min="1" max="28" required value="<%= p.suggestion.closeTargetDay %>">
+      </label>
+    </div>
+
+    <div class="field-grid">
+      <label class="field">
+        <span>Primary bookkeeper * <span class="muted small">— the only person the client ever sees</span></span>
+        <select name="primary" required>
+          <option value="">Choose…</option>
+          <% it.staff.forEach(function (s) { %>
+            <option value="<%= s.id %>"><%= s.name %> — <%= s.activeClients %> client<%= s.activeClients === 1 ? '' : 's' %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label class="field">
+        <span>Named backup * <span class="muted small">— costs nothing until used</span></span>
+        <select name="backup" required>
+          <option value="">Choose…</option>
+          <% it.staff.forEach(function (s) { %>
+            <option value="<%= s.id %>"><%= s.name %> — <%= s.activeClients %> client<%= s.activeClients === 1 ? '' : 's' %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label class="field">
+        <span>Reviewer <span class="muted small">— optional; expected on Growth and Controller+</span></span>
+        <select name="reviewer">
+          <option value="">None</option>
+          <% it.staff.forEach(function (s) { %>
+            <option value="<%= s.id %>"><%= s.name %></option>
+          <% }) %>
+        </select>
+      </label>
+    </div>
+
+    <p class="muted small">
+      Activating assigns the primary, which opens a message thread that already contains a hello,
+      turns the onboarding gaps into document requests, builds the bookkeeper's setup checklist,
+      and queues the client's notification. One action, both sides.
+    </p>
+    <button class="btn btn-primary" type="submit">Activate and assign</button>
+  </form>
+</section>
+<% }) %>

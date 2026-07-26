@@ -17,10 +17,14 @@
     billing: 'M3 6h18v12H3zM3 10h18',
     signatures: 'M3 17c3 0 3-8 6-8s2 10 5 10 2-6 7-6M3 21h18',
     workspace: 'M4 7h16v13H4zM9 7V4h6v3M4 12h16',
+    alerts: 'M12 3a6 6 0 016 6v4l2 3H4l2-3V9a6 6 0 016-6zM10 19a2 2 0 004 0',
+    scorecard: 'M4 4h16v16H4zM8 15v-4M12 15V8M16 15v-6',
     settings: 'M12 8a4 4 0 100 8 4 4 0 000-8zM12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1',
   };
   const items = staff ? [
     ['/workspace', 'Workspace', I.workspace],
+    ['/alerts', 'Alerts', I.alerts],
+    ['/scorecard', 'My scorecard', I.scorecard],
     ['/dashboard', 'Dashboard', I.dashboard],
     ['/documents', 'Documents', I.documents],
     ['/messages', 'Messages', I.messages],

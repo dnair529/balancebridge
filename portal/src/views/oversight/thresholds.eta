@@ -1,0 +1,53 @@
+<% layout('../layout') %>
+<%
+  /* Thresholds are explicit and configurable — never a vibe. Editing here
+     changes behaviour on the next computation, with no deploy. */
+%>
+
+<div class="ws-head">
+  <div>
+    <p><a class="link" href="/admin/portfolio">← Portfolio</a></p>
+    <h1>Health thresholds</h1>
+    <p class="ws-count">
+      The numbers behind every RAG chip. They live in the database rather than in the code, so tuning the firm's
+      tolerance is a form submission — not a release.
+    </p>
+  </div>
+</div>
+
+<section class="notice-card">
+  <p>
+    <strong>Never set the internal target equal to the public promise.</strong>
+    If the alert fires at the moment the firm has already broken its word, every alert is a failure notice.
+    Alert at 80% of the way and the gap is the recovery margin.
+  </p>
+</section>
+
+<% it.groups.forEach(function (g) { %>
+  <section class="card">
+    <div class="card-head"><h2><%= g.label %></h2></div>
+    <% g.rows.forEach(function (r) { %>
+      <form method="post" action="/admin/thresholds" class="stack">
+        <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+        <input type="hidden" name="key" value="<%= r.key %>">
+        <div class="field-grid">
+          <div class="field">
+            <span><%= r.label %><% if (r.tuned) { %> <span class="badge">tuned</span><% } %></span>
+            <p class="muted small"><%= r.help %></p>
+          </div>
+          <label class="field"><span>Yellow at (<%= r.unit %>)</span><input type="number" name="yellow_at" min="0" step="1" value="<%= r.yellowAt %>"></label>
+          <label class="field"><span>Red at (<%= r.unit %>)</span><input type="number" name="red_at" min="0" step="1" value="<%= r.redAt %>"></label>
+          <div class="field">
+            <span>&nbsp;</span>
+            <button class="btn btn-ghost btn-sm" type="submit">Save</button>
+          </div>
+        </div>
+        <p class="muted small">
+          Documented default: yellow <%= r.defaultYellowAt %>, red <%= r.defaultRedAt %> <%= r.unit %>.
+          <% if (r.updatedAt && r.updatedByName) { %>Last moved <%= it.fmtDateTime(r.updatedAt) %> by <%= r.updatedByName %>.<% } else { %>Never edited.<% } %>
+        </p>
+        <hr class="rule">
+      </form>
+    <% }) %>
+  </section>
+<% }) %>

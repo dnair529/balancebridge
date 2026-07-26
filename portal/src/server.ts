@@ -25,6 +25,7 @@ import { workspaceRoutes } from './routes/workspace.js';
 import { clientRoutes } from './routes/client.js';
 import { signupRoutes } from './routes/signup.js';
 import { onboardingRoutes } from './routes/onboarding.js';
+import { oversightRoutes } from './routes/oversight.js';
 
 async function build() {
   const app = Fastify({
@@ -124,6 +125,7 @@ async function build() {
   await app.register(signatureRoutes);
   await app.register(settingsRoutes);
   await app.register(adminRoutes);
+  await app.register(oversightRoutes);
   await app.register(workspaceRoutes);
   await app.register(leadRoutes);
   await app.register(webhookRoutes); // own scope: raw-body parser inside

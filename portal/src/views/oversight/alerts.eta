@@ -1,0 +1,93 @@
+<% layout('../layout') %>
+<%
+  /* Every alert is acknowledgeable, has an owner, and links to somewhere the
+     problem can actually be fixed. An alert nobody can act on shouldn't exist. */
+%>
+
+<div class="ws-head">
+  <div>
+    <p><a class="link" href="<%= it.isAdmin ? '/admin/portfolio' : '/workspace' %>">← Back</a></p>
+    <h1>Alerts</h1>
+    <p class="ws-count">
+      <% if (it.isAdmin) { %>
+        Every alert across the firm.
+      <% } else { %>
+        Yours only, and only for the <span class="ws-num"><%= it.assignedCount %></span> client<%= it.assignedCount === 1 ? '' : 's' %> you are assigned to.
+      <% } %>
+      Raised on transition, never on state — alerting on "is red" fires forever, alerting on "turned red" fires once and demands a decision.
+    </p>
+  </div>
+  <div class="ws-filters" style="margin:0">
+    <a class="ws-chip<%= it.showResolved ? '' : ' active' %>" href="/alerts">Open</a>
+    <a class="ws-chip<%= it.showResolved ? ' active' : '' %>" href="/alerts?show=resolved">Resolved</a>
+  </div>
+</div>
+
+<div class="ws-facts">
+  <span class="ws-fact"><span class="v"><%= it.stats.open %></span><span class="k">open</span></span>
+  <span class="ws-fact"><span class="v"><%= it.stats.acknowledged %></span><span class="k">acknowledged</span></span>
+  <span class="ws-fact"><span class="v"><%= it.stats.critical %></span><span class="k">critical</span></span>
+  <span class="ws-fact"><span class="v"><%= it.stats.held %></span><span class="k">held until 8am</span></span>
+</div>
+
+<% if (it.stats.held > 0) { %>
+<section class="notice-card">
+  <p>
+    <strong><%= it.stats.held %> held behind quiet hours.</strong>
+    Nothing wakes anyone for bookkeeping: 7pm–7am CT and all weekend queue to 8am CT the next business day.
+    The only exceptions are security and fraud signals, which deliver immediately.
+  </p>
+</section>
+<% } %>
+
+<section class="card">
+  <% if (it.rows.length === 0) { %>
+    <p class="empty"><%= it.showResolved ? 'Nothing has been resolved yet.' : 'Nothing needs you. That is the intended state.' %></p>
+  <% } else { %>
+  <table class="ws-table">
+    <thead>
+      <tr><th>Alert</th><th>Client</th><th>Raised</th><th>Delivery</th><th>Status</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% it.rows.forEach(function (a) { %>
+      <tr class="<%= a.severity === 'critical' ? 'flagged' : '' %>">
+        <td>
+          <span class="chip <%= a.severity === 'critical' ? 'sev-high' : (a.severity === 'warning' ? 'sev-medium' : 'sev-low') %>"><%= a.kind %></span>
+          <div class="strong"><%= a.title %></div>
+          <% if (a.detail) { %><div class="muted small"><%= a.detail %></div><% } %>
+        </td>
+        <td><%= a.clientName || '—' %></td>
+        <td class="muted small"><%= it.fmtDateTime(a.createdAt) %></td>
+        <td class="small">
+          <% if (!a.deliverAfter) { %>
+            <span class="muted">immediate</span>
+          <% } else if (a.deliverable) { %>
+            <span class="muted">delivered</span>
+          <% } else { %>
+            <span class="ws-risk-warning">held until <%= it.fmtDateTime(a.deliverAfter) %></span>
+          <% } %>
+        </td>
+        <td>
+          <span class="chip status-<%= a.status === 'open' ? 'open' : (a.status === 'resolved' ? 'paid' : 'draft') %>"><%= a.status %></span>
+        </td>
+        <td class="row-actions">
+          <% if (a.status !== 'resolved') { %>
+            <% if (a.actionUrl) { %><a class="btn btn-ghost btn-sm" href="<%= a.actionUrl %>">Open</a><% } %>
+            <% if (a.status === 'open') { %>
+            <form method="post" action="/alerts/<%= a.id %>/ack" class="inline">
+              <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+              <button class="btn btn-ghost btn-sm" type="submit">Acknowledge</button>
+            </form>
+            <% } %>
+            <form method="post" action="/alerts/<%= a.id %>/resolve" class="inline">
+              <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+              <button class="btn btn-ghost btn-sm" type="submit">Resolve</button>
+            </form>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</section>

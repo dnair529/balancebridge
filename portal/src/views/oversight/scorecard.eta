@@ -1,0 +1,199 @@
+<% layout('../layout') %>
+<%
+  /* Tier 1 outcomes prominently, Tier 2 as context, Tier 3 in its own clearly
+     labelled capacity section. The benchmark is the TEAM MEDIAN — never a named
+     leaderboard, because named rankings in a team of four trade collaboration
+     for a scoreboard. */
+  const c = it.card;
+  const hours = function (min) { return (Math.round(min / 6) / 10).toFixed(1); };
+  const pc = function (v) { return v === null ? '—' : v + '%'; };
+  const nm = function (v) { return v === null ? '—' : v; };
+  const mins = function (v) { return v === null ? '—' : v + ' min'; };
+  const vs = function (mine, team, higherIsBetter) {
+    if (mine === null || team === null) return '';
+    if (mine === team) return 'at the median';
+    const better = higherIsBetter ? mine > team : mine < team;
+    return (better ? 'above' : 'below') + ' the median of ' + team;
+  };
+%>
+
+<div class="ws-head">
+  <div>
+    <p><a class="link" href="<%= it.backHref %>">← Back</a></p>
+    <h1><%= it.own ? 'My scorecard' : c.name %></h1>
+    <p class="ws-count">
+      <%= c.from %> → <%= c.to %> · portfolio difficulty <span class="ws-num"><%= c.adjusted.difficultyIndex %></span>
+      <span class="muted">(100 = a clean, low-volume, current-books engagement)</span>
+    </p>
+  </div>
+  <div class="ws-filters" style="margin:0">
+    <% it.periods.forEach(function (p) { %>
+      <a class="ws-chip<%= it.period === p.value ? ' active' : '' %>" href="<%= it.own ? '/scorecard' : '/admin/scorecard/' + c.userId %>?period=<%= p.value %>"><%= p.label %></a>
+    <% }) %>
+  </div>
+</div>
+
+<section class="notice-card">
+  <p>
+    <strong>Outcomes are the scorecard. Activity is capacity and wellbeing, and is never a score.</strong>
+    Hours and logins tell the firm who is drowning and whether it can take another client. They do not belong in a ranking,
+    and nothing on this page ranks you against a named colleague — the benchmark is the team median across
+    <%= c.teamSize %> <%= c.teamSize === 1 ? 'person' : 'people' %>.
+  </p>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Tier 1 — Outcomes</h2>
+    <span class="muted small">This is the scorecard</span>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-num"><%= pc(c.outcomes.onTimeClosePct) %></div>
+      <div class="stat-label">On-time close rate</div>
+      <div class="muted small"><%= c.outcomes.closesOnTime %> of <%= c.outcomes.closesDue %> due · <%= vs(c.outcomes.onTimeClosePct, c.teamMedian.onTimeClosePct, true) %></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num"><%= pc(c.outcomes.preflightFirstPassPct) %></div>
+      <div class="stat-label">Pre-flight first pass</div>
+      <div class="muted small"><%= c.outcomes.preflightFirstPass %> of <%= c.outcomes.preflightAttempts %> · <%= vs(c.outcomes.preflightFirstPassPct, c.teamMedian.preflightFirstPassPct, true) %></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num"><%= c.outcomes.reviewerRejections %></div>
+      <div class="stat-label">Reviewer rejections</div>
+      <div class="muted small">Post-review corrections sent back</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num"><%= mins(c.outcomes.medianReplyMinutes) %></div>
+      <div class="stat-label">Median time to first reply</div>
+      <div class="muted small"><%= vs(c.outcomes.medianReplyMinutes, c.teamMedian.medianReplyMinutes, false) %></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num"><%= c.outcomes.slaBreaches %></div>
+      <div class="stat-label">SLA breaches</div>
+      <div class="muted small">Replies past the 4-business-hour internal target · median <%= nm(c.teamMedian.slaBreaches) %></div>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Difficulty-adjusted</h2>
+    <span class="muted small">Raw comparison is dishonest — three messy catch-up clients always look worse than three clean ones</span>
+  </div>
+  <table class="ws-table">
+    <thead><tr><th>Measure</th><th class="num">Raw</th><th class="num">Adjusted</th><th class="num">Team median (adjusted)</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>On-time close rate</td>
+        <td class="num"><%= pc(c.outcomes.onTimeClosePct) %></td>
+        <td class="num strong"><%= pc(c.adjusted.onTimeClosePct) %></td>
+        <td class="num muted"><%= pc(c.teamMedian.adjustedOnTimeClosePct) %></td>
+      </tr>
+      <tr>
+        <td>Transactions per active day</td>
+        <td class="num"><%= c.capacity.activeDays === 0 ? '—' : Math.round(c.throughput.txnsCategorized / c.capacity.activeDays) %></td>
+        <td class="num strong"><%= nm(c.adjusted.txnsPerActiveDay) %></td>
+        <td class="num muted">—</td>
+      </tr>
+      <tr>
+        <td>Median reply time <span class="muted small">(lower is better)</span></td>
+        <td class="num"><%= mins(c.outcomes.medianReplyMinutes) %></td>
+        <td class="num strong"><%= mins(c.adjusted.medianReplyMinutes) %></td>
+        <td class="num muted"><%= mins(c.teamMedian.medianReplyMinutes) %></td>
+      </tr>
+      <tr>
+        <td>Portfolio difficulty index</td>
+        <td class="num"><%= c.adjusted.difficultyIndex %></td>
+        <td class="num muted">—</td>
+        <td class="num muted"><%= nm(c.teamMedian.difficultyIndex) %></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Tier 2 — Throughput</h2>
+    <span class="muted small">Context, not ranking</span>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-num"><%= c.throughput.itemsCleared %></div>
+      <div class="stat-label">Work items cleared</div>
+      <div class="muted small">median <%= nm(c.teamMedian.itemsCleared) %></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num"><%= c.throughput.txnsCategorized %></div>
+      <div class="stat-label">Transactions categorised</div>
+      <div class="muted small">median <%= nm(c.teamMedian.txnsCategorized) %></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num"><%= pc(c.throughput.ruleSharePct) %></div>
+      <div class="stat-label">Rule leverage</div>
+      <div class="muted small">Resolved with no model call. Rising means you are teaching the system — the compounding asset.</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num"><%= pc(c.throughput.aiAcceptancePct) %></div>
+      <div class="stat-label">AI suggestions accepted</div>
+      <div class="muted small">
+        <%= c.throughput.aiAccepted %> accepted · <%= c.throughput.aiOverridden %> overridden.
+        Both directions are signal: near-100% can mean rubber-stamping, near-zero can mean the model is badly tuned.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Tier 3 — Capacity and wellbeing</h2>
+    <span class="muted small">Never a score</span>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-num"><%= c.capacity.activeClients %></div>
+      <div class="stat-label">Active clients carried</div>
+      <div class="muted small">median <%= nm(c.teamMedian.activeClients) %></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num"><%= hours(c.capacity.minutesWorked) %>h</div>
+      <div class="stat-label">Effort logged</div>
+      <div class="muted small">across <%= c.capacity.activeDays %> active day<%= c.capacity.activeDays === 1 ? '' : 's' %></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num"><%= c.capacity.sessionsCount %></div>
+      <div class="stat-label">Sign-ins</div>
+      <div class="muted small">Presence, not productivity</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num<%= c.capacity.outOfHoursPct !== null && c.capacity.outOfHoursPct >= 25 ? ' ws-risk-critical' : '' %>"><%= hours(c.capacity.outOfHoursMinutes) %>h</div>
+      <div class="stat-label">Out of hours &amp; weekends</div>
+      <div class="muted small">
+        <%= pc(c.capacity.outOfHoursPct) %> of effort, outside 7am–7pm CT weekdays.
+        A burnout signal to act on, not a diligence badge to reward.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Portfolio</h2>
+    <span class="muted small">Hardest first · this is what the difficulty adjustment is made of</span>
+  </div>
+  <% if (c.portfolio.length === 0) { %>
+    <p class="empty">No live assignments.</p>
+  <% } else { %>
+  <table class="ws-table">
+    <thead><tr><th>Client</th><th class="num">Difficulty</th></tr></thead>
+    <tbody>
+      <% c.portfolio.forEach(function (p) { %>
+        <tr>
+          <td class="strong"><%= p.businessName %></td>
+          <td class="num<%= p.difficultyIndex >= 200 ? ' ws-risk-critical' : '' %>"><%= p.difficultyIndex %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</section>

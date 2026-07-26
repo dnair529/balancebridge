@@ -1,0 +1,145 @@
+<% layout('../layout') %>
+<%
+  /* The client scorecard — what you read before a client call or a pricing
+     conversation. Six dimensions with reasons, the status history, and who was
+     assigned when. Never shown to a client-role user. */
+  const h = it.health;
+  const hours = function (min) { return (Math.round(min / 6) / 10).toFixed(1); };
+  const chipFor = function (s) { return s === 'red' ? 'sev-high' : (s === 'yellow' ? 'sev-medium' : 'status-active'); };
+%>
+
+<div class="ws-head">
+  <div>
+    <p><a class="link" href="/admin/portfolio">← Portfolio</a></p>
+    <h1><%= it.client.businessName %></h1>
+    <p class="ws-count">
+      <span class="chip status-<%= it.client.status %>"><%= it.client.status %></span>
+      <% if (it.client.plan) { %><span class="chip"><%= it.client.plan.replace('_',' ') %></span><% } %>
+      <% if (it.client.monthlyFeeCents) { %><span class="muted"><%= it.fmtMoney(it.client.monthlyFeeCents) %>/month</span><% } %>
+      <% if (it.client.closeTargetDay) { %><span class="muted">· close by business day <%= it.client.closeTargetDay %></span><% } %>
+    </p>
+  </div>
+</div>
+
+<% if (!h) { %>
+  <section class="card"><p class="empty">No health is computed for this client — health covers active and paused engagements only.</p></section>
+<% } else { %>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Overall — <span class="chip <%= it.chip %>"><%= h.status %></span></h2>
+    <span class="muted small">The worst dimension, never an average</span>
+  </div>
+  <p><strong><%= h.reason %></strong></p>
+  <p class="muted small">
+    Blocked by <strong><%= it.blockedLabel[h.blockedBy] || h.blockedBy %></strong> ·
+    trend <%= h.trend %> over 30 days ·
+    <%= h.timeInStatusDays === null ? 'no recorded transition yet' : h.timeInStatusDays + ' days in this status' %>
+    <% if (h.effortPct !== null) { %> · effort <%= hours(h.effortMinutes90) %>h against <%= it.fmtMoney(h.feeCents90) %> = <%= h.effortPct %>% of fee<% } %>
+  </p>
+</section>
+
+<section class="card">
+  <div class="card-head"><h2>The six dimensions</h2></div>
+  <table class="ws-table">
+    <thead><tr><th>Dimension</th><th>Status</th><th>Reason</th><th>Blocked by</th></tr></thead>
+    <tbody>
+      <% h.dimensions.forEach(function (d) { %>
+      <tr class="<%= d.status === 'red' ? 'flagged' : '' %>">
+        <td class="strong"><%= d.label %></td>
+        <td><span class="chip <%= chipFor(d.status) %>"><%= d.status %></span></td>
+        <td class="small"><%= d.reason %></td>
+        <td class="small"><%= it.blockedLabel[d.blockedBy] || d.blockedBy %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+<% } %>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Status history</h2>
+    <span class="muted small">Written only when the colour changed</span>
+  </div>
+  <% if (it.history.length === 0) { %>
+    <p class="empty">No transition recorded yet.</p>
+  <% } else { %>
+    <ul class="ws-strip-list">
+      <% it.history.forEach(function (row) { %>
+        <li>
+          <span class="muted small"><%= it.fmtDateTime(row.computedAt) %></span>
+          <%= row.previousStatus || 'new' %> → <strong><%= row.status %></strong>
+          <span class="why">blocked by <%= row.blockedBy %></span>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Assignment history</h2>
+    <span class="muted small">Who could see what, when</span>
+  </div>
+  <% if (it.assignments.length === 0) { %>
+    <p class="empty">Nobody has ever been assigned to this client.</p>
+  <% } else { %>
+  <table class="ws-table">
+    <thead><tr><th>Person</th><th>Capacity</th><th>From</th><th>Until</th><th></th></tr></thead>
+    <tbody>
+      <% it.assignments.forEach(function (row) { %>
+      <tr>
+        <td class="strong"><%= row.name %><div class="muted small"><%= row.email %></div></td>
+        <td><span class="chip"><%= row.a.role %></span></td>
+        <td class="muted small"><%= it.fmtDate(row.a.assignedAt) %></td>
+        <td class="muted small">
+          <% if (row.a.endedAt) { %><%= it.fmtDate(row.a.endedAt) %><div class="small"><%= row.a.endedReason || '' %></div><% } else { %><span class="chip status-active">active</span><% } %>
+        </td>
+        <td class="row-actions">
+          <% if (!row.a.endedAt) { %>
+          <form method="post" action="/admin/assignments/<%= row.a.id %>/end" class="inline">
+            <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+            <input type="hidden" name="return" value="/admin/portfolio/<%= it.client.id %>">
+            <input type="text" name="reason" placeholder="Reason" class="code-input" style="width:12rem">
+            <button class="btn btn-ghost btn-sm" type="submit">End access</button>
+          </form>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</section>
+
+<section class="card">
+  <div class="card-head"><h2>Assign somebody</h2></div>
+  <form method="post" action="/admin/clients/<%= it.client.id %>/assign" class="stack">
+    <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+    <input type="hidden" name="return" value="/admin/portfolio/<%= it.client.id %>">
+    <div class="field-grid">
+      <label class="field">
+        <span>Person</span>
+        <select name="user_id" required>
+          <option value="">Choose…</option>
+          <% it.staff.forEach(function (s) { %>
+            <option value="<%= s.id %>"><%= s.name %> — <%= s.activeClients %> client<%= s.activeClients === 1 ? '' : 's' %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label class="field">
+        <span>Capacity</span>
+        <select name="role" required>
+          <% it.roles.forEach(function (r) { %><option value="<%= r %>"><%= r %></option><% }) %>
+        </select>
+      </label>
+      <label class="field"><span>Reason (optional)</span><input type="text" name="reason" placeholder="Holiday cover, reassignment…"></label>
+    </div>
+    <p class="muted small">
+      Assigning a primary replaces the existing one, ends their access immediately, and tells the client.
+      The client only ever sees the primary — backups and reviewers stay invisible to them.
+    </p>
+    <button class="btn btn-primary" type="submit">Assign</button>
+  </form>
+</section>

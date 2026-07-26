@@ -1,0 +1,95 @@
+<% layout('../layout') %>
+<%
+  /* Creating a bookkeeper account is exclusive to the admin role, and it issues
+     an invite rather than setting a password — nobody here ever holds somebody
+     else's credential. */
+  const hours = function (min) { return (Math.round(min / 6) / 10).toFixed(1); };
+%>
+
+<div class="ws-head">
+  <div>
+    <p><a class="link" href="/admin/portfolio">← Portfolio</a></p>
+    <h1>Bookkeepers</h1>
+    <p class="ws-count">Firm-side accounts. Only an administrator can create one, and only an administrator can assign a client to one.</p>
+  </div>
+</div>
+
+<% if (it.flags.length > 0) { %>
+<section class="ws-strip">
+  <h2>Wellbeing — read this before the numbers</h2>
+  <ul class="ws-strip-list">
+    <% it.flags.forEach(function (f) { %>
+      <li>
+        <strong><%= f.name %></strong> worked <%= hours(f.outOfHoursMinutes) %>h out of hours this week,
+        <span class="why"><%= f.ratio %>× their own trailing baseline of <%= hours(f.baselineMinutes) %>h. This is a signal to act on, not diligence to reward.</span>
+      </li>
+    <% }) %>
+  </ul>
+</section>
+<% } %>
+
+<section class="card">
+  <div class="card-head"><h2>Create a bookkeeper account</h2></div>
+  <form method="post" action="/admin/staff" class="stack">
+    <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+    <div class="field-grid">
+      <label class="field"><span>Work email *</span><input type="email" name="email" required placeholder="name@balancebridge.us"></label>
+      <label class="field">
+        <span>Role</span>
+        <select name="role">
+          <option value="staff">Bookkeeper — assigned clients only</option>
+          <option value="admin">Administrator — every client, plus billing and audit</option>
+        </select>
+      </label>
+    </div>
+    <p class="muted small">
+      This sends an invite that expires in seven days. They set their own password, so no administrator ever
+      holds it — which is what keeps the audit log honest about who did what.
+    </p>
+    <button class="btn btn-primary" type="submit">Send invite</button>
+  </form>
+</section>
+
+<section class="card">
+  <div class="card-head"><h2>People</h2></div>
+  <% if (it.staff.length === 0) { %>
+    <p class="empty">No firm-side accounts yet.</p>
+  <% } else { %>
+  <table class="table">
+    <thead><tr><th>Name</th><th class="hide-sm">Email</th><th>Role</th><th class="num">Clients</th><th class="hide-sm">Last rollup</th><th></th></tr></thead>
+    <tbody>
+      <% it.staff.forEach(function (s) { %>
+      <tr>
+        <td class="strong"><%= s.name %><% if (s.disabled) { %> <span class="chip status-void">disabled</span><% } %></td>
+        <td class="hide-sm muted"><%= s.email %></td>
+        <td><span class="chip"><%= s.role %></span></td>
+        <td class="num"><%= s.activeClients %></td>
+        <td class="hide-sm muted small"><%= s.lastRollup || 'never' %></td>
+        <td class="row-actions"><a class="btn btn-ghost btn-sm" href="/admin/scorecard/<%= s.id %>">Scorecard</a></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</section>
+
+<section class="card">
+  <div class="card-head"><h2>Outstanding invites</h2></div>
+  <% if (it.invites.length === 0) { %>
+    <p class="empty">No firm-side invite is outstanding.</p>
+  <% } else { %>
+  <table class="table">
+    <thead><tr><th>Email</th><th>Role</th><th>Invited by</th><th>Expires</th></tr></thead>
+    <tbody>
+      <% it.invites.forEach(function (row) { %>
+        <tr>
+          <td class="strong"><%= row.invite.email %></td>
+          <td><span class="chip"><%= row.invite.role %></span></td>
+          <td class="muted"><%= row.inviterName %></td>
+          <td class="muted small"><%= it.fmtDateTime(row.invite.expiresAt) %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</section>
