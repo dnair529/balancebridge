@@ -1,0 +1,54 @@
+<% layout('../layout') %>
+<link rel="stylesheet" href="/assets/signup.css">
+
+<div class="wiz-head">
+  <h1>Onboarding for <%= it.businessName %></h1>
+  <p class="sub">
+    Seven short sections. Every one saves on its own, so you can do two now and
+    the rest on Sunday. Sections A to C are what unlock a real quote.
+  </p>
+</div>
+
+<div class="wiz-progress">
+  <progress value="<%= it.progress.done %>" max="<%= it.progress.total %>"
+            aria-label="Onboarding progress"></progress>
+  <span class="count"><%= it.progress.done %> of <%= it.progress.total %> saved</span>
+</div>
+
+<% if (it.clientStatus === 'pending') { %>
+  <div class="hard-rule">
+    <b>Your account is pending review.</b>
+    You can complete onboarding and upload documents right now. Messaging opens
+    the moment we assign your bookkeeper — and when we do, you will meet them by
+    name rather than being handed a ticket number.
+  </div>
+<% } %>
+
+<div class="wiz-card">
+  <% it.sections.forEach(function (s, i) { %>
+    <div class="doc-item">
+      <span aria-hidden="true"><%= s.done ? '✓' : (i + 1) %></span>
+      <span>
+        <b><%= s.title %></b>
+        <em><%= s.blurb %></em>
+      </span>
+      <a class="btn btn-ghost btn-sm" href="/onboarding/<%= s.key %><%= it.staffQuery %>">
+        <%= s.done ? 'Review' : 'Start' %>
+      </a>
+    </div>
+  <% }) %>
+</div>
+
+<div class="wiz-card">
+  <h2>Your data is yours</h2>
+  <p class="card-sub">
+    Everything you give us — documents, transactions, questions, invoices, close
+    summaries — downloads as a single file, any time, without asking anyone.
+  </p>
+  <a class="btn btn-ghost btn-sm" href="/onboarding/export<%= it.staffQuery %>">Download my data (.zip)</a>
+</div>
+
+<p class="muted small">
+  Last saved <%= it.fmtDateTime(it.lastSavedAt) %><% if (it.submittedAt) { %> ·
+  Submitted <%= it.fmtDateTime(it.submittedAt) %><% } %>
+</p>

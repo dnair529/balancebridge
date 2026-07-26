@@ -1,0 +1,119 @@
+<% layout('../layout') %>
+<%~ include('_head', it) %>
+
+<form method="post" action="<%= it.actionUrl %>" class="stack">
+  <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+
+  <div class="wiz-card">
+    <h2>What do you want us doing?</h2>
+    <p class="card-sub">
+      Tick everything that sounds like your life. You are not committing to
+      anything here — it tells us what to quote, and what to leave alone.
+    </p>
+    <div class="check-grid">
+      <% it.services.forEach(function (s) { %>
+        <label>
+          <input type="checkbox" name="services" value="<%= s.value %>" <%= it.selectedServices.has(s.value) ? 'checked' : '' %>>
+          <span><%= s.label %></span>
+        </label>
+      <% }) %>
+    </div>
+  </div>
+
+  <div class="wiz-card">
+    <h2>Where the books are today</h2>
+    <p class="card-sub">Honest answers here save you money. Nobody is judging a shoebox.</p>
+
+    <div class="wiz-grid">
+      <label class="wiz-field">
+        <span class="label">How many months behind?</span>
+        <input type="number" name="monthsBehind" min="0" max="240" value="<%= it.answers.monthsBehind || (it.client && it.client.monthsBehind) || 0 %>">
+        <span class="hint">0 if you are current. Catch-up is quoted separately from the monthly fee.</span>
+      </label>
+
+      <label class="wiz-field">
+        <span class="label">Current software</span>
+        <select name="currentSoftware">
+          <option value="">Choose…</option>
+          <% it.software.forEach(function (s) { %>
+            <option value="<%= s %>" <%= (it.answers.currentSoftware || (it.client && it.client.currentSoftware)) === s ? 'selected' : '' %>><%= s %></option>
+          <% }) %>
+        </select>
+      </label>
+
+      <label class="wiz-field">
+        <span class="label">Annual revenue band</span>
+        <select name="revenueBand">
+          <option value="">Choose…</option>
+          <% it.revenueBands.forEach(function (r) { %>
+            <option value="<%= r %>" <%= (it.answers.revenueBand || (it.client && it.client.revenueBand)) === r ? 'selected' : '' %>><%= r %></option>
+          <% }) %>
+        </select>
+      </label>
+
+      <label class="wiz-field">
+        <span class="label">Employees on payroll</span>
+        <input type="number" name="employees" min="0" value="<%= it.answers.employees || 0 %>">
+      </label>
+
+      <label class="wiz-field">
+        <span class="label">1099 contractors</span>
+        <input type="number" name="contractors" min="0" value="<%= it.answers.contractors || 0 %>">
+      </label>
+
+      <label class="wiz-field">
+        <span class="label">Prior bookkeeper</span>
+        <input type="text" name="priorBookkeeper" value="<%= it.answers.priorBookkeeper || '' %>">
+        <span class="hint">Name or firm, so a handover is orderly. Blank is fine.</span>
+      </label>
+    </div>
+
+    <div class="check-stack">
+      <label>
+        <input type="checkbox" name="runsPayroll" value="on" <%= it.answers.runsPayroll ? 'checked' : '' %>>
+        <span><b>We run payroll</b><em>Tick if anyone gets a W-2 from you.</em></span>
+      </label>
+      <label>
+        <input type="checkbox" name="collectsSalesTax" value="on" <%= it.answers.collectsSalesTax ? 'checked' : '' %>>
+        <span><b>We collect sales tax</b><em>Tick if you charge it on anything you sell.</em></span>
+      </label>
+    </div>
+
+    <div class="wiz-grid">
+      <label class="wiz-field">
+        <span class="label">Payroll provider</span>
+        <input type="text" name="payrollProvider" value="<%= it.answers.payrollProvider || '' %>" placeholder="Gusto, ADP, QuickBooks Payroll…">
+      </label>
+      <label class="wiz-field">
+        <span class="label">Sales tax filing frequency</span>
+        <select name="salesTaxFrequency">
+          <option value="">Choose…</option>
+          <% it.salesTaxFrequencies.forEach(function (f) { %>
+            <option value="<%= f %>" <%= it.answers.salesTaxFrequency === f ? 'selected' : '' %>><%= f %></option>
+          <% }) %>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <div class="wiz-card">
+    <h2>Your CPA</h2>
+    <p class="card-sub">
+      We coordinate with whoever files your return — we do not file it, and we are
+      not a CPA firm. Giving us their details now means January is a handover, not a fire drill.
+    </p>
+    <div class="wiz-grid">
+      <label class="wiz-field">
+        <span class="label">CPA name or firm</span>
+        <input type="text" name="cpaName" value="<%= it.answers.cpaName || (it.client && it.client.cpaName) || '' %>">
+      </label>
+      <label class="wiz-field">
+        <span class="label">CPA email</span>
+        <input type="email" name="cpaEmail" value="<%= it.answers.cpaEmail || (it.client && it.client.cpaEmail) || '' %>">
+        <span class="hint">We will not contact them without telling you first.</span>
+      </label>
+    </div>
+  </div>
+
+  <%~ include('_actions', it) %>
+</form>

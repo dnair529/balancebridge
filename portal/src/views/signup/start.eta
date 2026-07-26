@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Start your free books review — Balance Bridge Financial</title>
+  <meta name="description" content="Tell us where your books stand. We read them, tell you what we find, and quote a fixed monthly price. No charge, no obligation.">
+  <link rel="stylesheet" href="/assets/portal.css">
+  <link rel="stylesheet" href="/assets/signup.css">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#0B1F33">
+</head>
+<body class="start">
+<header class="start-top">
+  <a class="brand" href="<%= it.siteUrl %>">
+    <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 25h24" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/><path d="M6 21c3-8 17-8 20 0" stroke="#10B981" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M10 21v4M22 21v4" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/></svg>
+    <span class="brand-word">Balance Bridge <span>FINANCIAL</span></span>
+  </a>
+  <a class="quiet" href="/login">Already have an account? Sign in</a>
+</header>
+
+<main class="start-wrap">
+
+  <!-- ------------------------------------------------------------ pitch -->
+  <section class="pitch">
+    <h1>Start your free books review</h1>
+    <p class="lede">
+      Tell us where your books actually stand — behind, current, or never kept.
+      We read them, tell you plainly what we find, and quote a fixed monthly
+      price. <strong>No charge, no obligation, about sixty seconds of typing.</strong>
+    </p>
+
+    <ul class="promises">
+      <li>
+        <span class="tick" aria-hidden="true">✓</span>
+        <span>
+          <b>A real person reads it, within one business day.</b>
+          <span class="detail">Not an autoresponder and not a sales sequence. Someone who does this work looks at what you sent.</span>
+        </span>
+      </li>
+      <li>
+        <span class="tick" aria-hidden="true">✓</span>
+        <span>
+          <b>You keep the findings either way.</b>
+          <span class="detail">A written summary of what we found and what it would take to fix — yours whether or not you hire us.</span>
+        </span>
+      </li>
+      <li>
+        <span class="tick" aria-hidden="true">✓</span>
+        <span>
+          <b>A fixed monthly price, quoted after we've seen the books.</b>
+          <span class="detail">Not an hourly meter. You will know the number before anything starts.</span>
+        </span>
+      </li>
+      <li>
+        <span class="tick" aria-hidden="true">✓</span>
+        <span>
+          <b>Books closed by the 10th, not "sometime next quarter."</b>
+          <span class="detail">P&amp;L, balance sheet, and a short note in English about what the numbers are telling you.</span>
+        </span>
+      </li>
+    </ul>
+
+    <!-- The trust statement. This is the single most important paragraph on
+         the page: it is what an owner is actually worried about at 11pm. -->
+    <div class="trust">
+      <h2>We will never ask for your online banking password</h2>
+      <p>
+        Not now, not later, not "just this once." To reconcile an account we need
+        the institution and the <strong>last four digits</strong> — that is genuinely enough.
+      </p>
+      <p>
+        When it is time for real data access, it comes through a read-only bank
+        connection or an accountant invite in your own software. Both are
+        revocable by you, in one click, without calling anyone.
+      </p>
+    </div>
+
+    <p class="disclaimer">
+      Balance Bridge Financial is a bookkeeping and accounting firm based in Texas.
+      We coordinate with your CPA at tax time — we do not file your returns and we
+      are not a CPA firm.
+    </p>
+  </section>
+
+  <!-- ------------------------------------------------------------- form -->
+  <section class="start-card">
+    <h2>Nine questions</h2>
+    <p class="card-sub">That is the whole form. Nothing sensitive — no EIN, no account numbers, no card.</p>
+
+    <% if (it.hasErrors) { %>
+      <div class="error-summary" role="alert">
+        A few things need a second look — they are marked below.
+      </div>
+    <% } %>
+
+    <form method="post" action="/start" class="stack" novalidate>
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+
+      <label class="field <%= it.errors.businessName ? 'has-error' : '' %>">
+        <span class="label">Business name</span>
+        <input type="text" name="businessName" required autocomplete="organization"
+               value="<%= it.values.businessName || '' %>" autofocus>
+        <% if (it.errors.businessName) { %><span class="field-error"><%= it.errors.businessName %></span><% } %>
+      </label>
+
+      <div class="pair">
+        <label class="field <%= it.errors.contactName ? 'has-error' : '' %>">
+          <span class="label">Your name</span>
+          <input type="text" name="contactName" required autocomplete="name"
+                 value="<%= it.values.contactName || '' %>">
+          <% if (it.errors.contactName) { %><span class="field-error"><%= it.errors.contactName %></span><% } %>
+        </label>
+
+        <label class="field <%= it.errors.email ? 'has-error' : '' %>">
+          <span class="label">Work email</span>
+          <input type="email" name="email" required autocomplete="email"
+                 value="<%= it.values.email || '' %>">
+          <span class="hint">This becomes your login.</span>
+          <% if (it.errors.email) { %><span class="field-error"><%= it.errors.email %></span><% } %>
+        </label>
+      </div>
+
+      <div class="pair">
+        <label class="field <%= it.errors.mobile ? 'has-error' : '' %>">
+          <span class="label">Mobile number</span>
+          <input type="tel" name="mobile" required autocomplete="tel"
+                 placeholder="(512) 555-0147" value="<%= it.values.mobile || '' %>">
+          <span class="hint">So you can text us a receipt from a job site instead of hoarding paper.</span>
+          <% if (it.errors.mobile) { %><span class="field-error"><%= it.errors.mobile %></span><% } %>
+        </label>
+
+        <label class="field <%= it.errors.password ? 'has-error' : '' %>">
+          <span class="label">Password</span>
+          <input type="password" name="password" required autocomplete="new-password"
+                 minlength="<%= it.minPassword %>">
+          <span class="hint">At least <%= it.minPassword %> characters. A short sentence works well.</span>
+          <% if (it.errors.password) { %><span class="field-error"><%= it.errors.password %></span><% } %>
+        </label>
+      </div>
+
+      <label class="field <%= it.errors.industry ? 'has-error' : '' %>">
+        <span class="label">Industry</span>
+        <select name="industry" required>
+          <option value="">Choose the closest one…</option>
+          <% it.industries.forEach(function (i) { %>
+            <option value="<%= i.value %>" <%= it.values.industry === i.value ? 'selected' : '' %>><%= i.label %></option>
+          <% }) %>
+        </select>
+        <span class="hint">This drives the chart of accounts and the checklist we build for you.</span>
+        <% if (it.errors.industry) { %><span class="field-error"><%= it.errors.industry %></span><% } %>
+      </label>
+
+      <fieldset class="group <%= it.errors.booksStatus ? 'has-error' : '' %>">
+        <legend>Where do your books stand?</legend>
+        <div class="radio-row">
+          <% it.booksStatuses.forEach(function (b) { %>
+            <label>
+              <input type="radio" name="booksStatus" value="<%= b.value %>" required
+                     <%= it.values.booksStatus === b.value ? 'checked' : '' %>>
+              <span><b><%= b.label %></b><em><%= b.hint %></em></span>
+            </label>
+          <% }) %>
+        </div>
+        <% if (it.errors.booksStatus) { %><span class="field-error"><%= it.errors.booksStatus %></span><% } %>
+      </fieldset>
+
+      <label class="field <%= it.errors.txnVolumeBand ? 'has-error' : '' %>">
+        <span class="label">Roughly how many transactions a month?</span>
+        <select name="txnVolumeBand" required>
+          <option value="">A rough guess is fine…</option>
+          <% it.txnBands.forEach(function (b) { %>
+            <option value="<%= b.value %>" <%= it.values.txnVolumeBand === b.value ? 'selected' : '' %>><%= b.label %></option>
+          <% }) %>
+        </select>
+        <span class="hint">Count card swipes, checks and deposits. This sets the price band.</span>
+        <% if (it.errors.txnVolumeBand) { %><span class="field-error"><%= it.errors.txnVolumeBand %></span><% } %>
+      </label>
+
+      <label class="field">
+        <span class="label">How did you hear about us? <span class="optional">Optional</span></span>
+        <select name="heardAbout">
+          <option value="">Rather not say</option>
+          <% it.heardAbout.forEach(function (h) { %>
+            <option value="<%= h %>" <%= it.values.heardAbout === h ? 'selected' : '' %>><%= h %></option>
+          <% }) %>
+        </select>
+      </label>
+
+      <!-- THREE separate consents. Never bundled, never pre-ticked.
+           SMS consent is its own box because TCPA requires explicit,
+           documented, unbundled opt-in. -->
+      <div class="consents">
+        <label class="consent <%= it.errors.consentTerms ? 'has-error' : '' %>">
+          <input type="checkbox" name="consentTerms" value="on" required
+                 <%= it.values.consentTerms ? 'checked' : '' %>>
+          <span>
+            <b>I agree to the terms and privacy policy</b>
+            Required. Read the <a href="<%= it.siteUrl %>/terms">terms of service</a> and the
+            <a href="<%= it.siteUrl %>/privacy">privacy policy</a> — they are short and in plain English.
+            <% if (it.errors.consentTerms) { %><span class="field-error"><%= it.errors.consentTerms %></span><% } %>
+          </span>
+        </label>
+
+        <label class="consent">
+          <input type="checkbox" name="consentSms" value="on" <%= it.values.consentSms ? 'checked' : '' %>>
+          <span>
+            <b>Text me at this number <span class="optional">Optional</span></b>
+            You agree to receive text messages from Balance Bridge Financial about your account —
+            receipt confirmations, questions about a transaction, and reminders. Message frequency
+            varies; message and data rates may apply. Reply STOP to opt out or HELP for help.
+            Saying no here changes nothing else about your account.
+          </span>
+        </label>
+
+        <label class="consent">
+          <input type="checkbox" name="consentMarketing" value="on" <%= it.values.consentMarketing ? 'checked' : '' %>>
+          <span>
+            <b>Email me occasionally <span class="optional">Optional</span></b>
+            Tax deadlines, a plain-English note when a rule changes, and the odd thing worth
+            knowing. Roughly monthly. One click unsubscribes, and it is genuinely optional.
+          </span>
+        </label>
+      </div>
+
+      <button class="submit" type="submit">Start my free books review</button>
+      <p class="after-submit">
+        No card required. We will not call you unless you ask us to.
+      </p>
+    </form>
+  </section>
+</main>
+
+<footer class="start-foot">
+  Balance Bridge Financial · <a href="<%= it.siteUrl %>">balancebridge.us</a>
+</footer>
+</body>
+</html>

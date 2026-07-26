@@ -1,0 +1,99 @@
+<% layout('../layout') %>
+<%~ include('_head', it) %>
+
+<div class="hard-rule">
+  <b>We never ask for full account numbers or online banking passwords.</b>
+  The last four digits is genuinely all we need to reconcile and label an account.
+  Real data access comes later through a read-only bank connection or an accountant
+  invite in your own software — both revocable by you, in one click, and neither
+  requires you to hand over a credential. If anyone ever asks you for your banking
+  password on our behalf, it is not us.
+</div>
+
+<form method="post" action="<%= it.actionUrl %>" class="stack">
+  <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+
+  <div class="wiz-card">
+    <h2>Accounts we will reconcile</h2>
+    <p class="card-sub">
+      Bank accounts, credit cards, loans, and the merchant or payroll platforms money
+      moves through — Square, Stripe, Shopify, Toast, Gusto. Blank rows are ignored,
+      and clearing a row removes that account.
+    </p>
+
+    <div class="rows">
+      <% var idx = 0; %>
+      <% it.accounts.forEach(function (a) { %>
+        <div class="row-card">
+          <div class="row-grid">
+            <label>
+              <span class="mini">Institution</span>
+              <input type="text" name="institution" value="<%= a.institution %>">
+            </label>
+            <label>
+              <span class="mini">Nickname</span>
+              <input type="text" name="nickname" value="<%= a.nickname || '' %>" placeholder="Operating">
+            </label>
+            <label>
+              <span class="mini">Kind</span>
+              <select name="kind">
+                <% it.accountKinds.forEach(function (k) { %>
+                  <option value="<%= k.value %>" <%= a.kind === k.value ? 'selected' : '' %>><%= k.label %></option>
+                <% }) %>
+              </select>
+            </label>
+            <label>
+              <span class="mini">Last 4 digits</span>
+              <input type="text" name="last4" inputmode="numeric" maxlength="4" pattern="[0-9]{4}"
+                     value="<%= a.last4 || '' %>" placeholder="0147">
+            </label>
+          </div>
+          <label class="keep">
+            <input type="checkbox" name="activeRows" value="<%= idx %>" <%= a.active ? 'checked' : '' %>>
+            Still open and in use
+          </label>
+        </div>
+        <% idx += 1; %>
+      <% }) %>
+
+      <% it.blankRows.forEach(function () { %>
+        <div class="row-card">
+          <div class="row-grid">
+            <label>
+              <span class="mini">Institution</span>
+              <input type="text" name="institution" placeholder="Frost Bank">
+            </label>
+            <label>
+              <span class="mini">Nickname</span>
+              <input type="text" name="nickname" placeholder="Operating">
+            </label>
+            <label>
+              <span class="mini">Kind</span>
+              <select name="kind">
+                <% it.accountKinds.forEach(function (k) { %>
+                  <option value="<%= k.value %>"><%= k.label %></option>
+                <% }) %>
+              </select>
+            </label>
+            <label>
+              <span class="mini">Last 4 digits</span>
+              <input type="text" name="last4" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="0147">
+            </label>
+          </div>
+          <label class="keep">
+            <input type="checkbox" name="activeRows" value="<%= idx %>" checked>
+            Still open and in use
+          </label>
+        </div>
+        <% idx += 1; %>
+      <% }) %>
+    </div>
+
+    <p class="muted small">
+      Need more than <%= idx %> rows? Save this page and it will come back with the ones
+      you entered plus three fresh blanks.
+    </p>
+  </div>
+
+  <%~ include('_actions', it) %>
+</form>

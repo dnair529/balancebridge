@@ -1,0 +1,949 @@
+/* -------------------------------------------------------------------
+   signup.css — the public "Start your free books review" page and the
+   confirmation that follows it.
+
+   These are the only two pages in the portal an unauthenticated stranger
+   is meant to spend time on, so they are the only two that get a real
+   marketing layout rather than the narrow auth card. Tokens come from
+   portal.css; everything here is layout and voice.
+
+   No inline styles anywhere — the app's CSP is `style-src 'self'`.
+------------------------------------------------------------------- */
+
+body.start {
+  background: var(--paper);
+  color: var(--navy);
+  margin: 0;
+}
+
+/* ---------- Slim public header ---------- */
+
+.start-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem clamp(1rem, 4vw, 3rem);
+  background: var(--navy);
+  color: #fff;
+}
+
+.start-top .brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: #fff;
+}
+
+.start-top .brand-mark {
+  width: 30px;
+  height: 30px;
+}
+
+.start-top .brand-word {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.start-top .brand-word span {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  color: var(--steel-400);
+  font-weight: 500;
+}
+
+.start-top a.quiet {
+  color: var(--accent-400);
+  font-size: 0.9rem;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.start-top a.quiet:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Two-column shell ---------- */
+
+.start-wrap {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 3.5rem) clamp(1rem, 4vw, 2rem) 3rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .start-wrap {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Left: the pitch ---------- */
+
+.pitch h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 4.6vw, 3rem);
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.9rem;
+  color: var(--navy);
+}
+
+.pitch .lede {
+  font-size: 1.12rem;
+  line-height: 1.65;
+  color: var(--steel);
+  margin: 0 0 1.6rem;
+  max-width: 46ch;
+}
+
+.pitch .lede strong {
+  color: var(--navy);
+  font-weight: 600;
+}
+
+.promises {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.8rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.promises li {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 0.7rem;
+  align-items: start;
+  line-height: 1.55;
+}
+
+.promises .tick {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.14);
+  color: var(--accent-600);
+  display: grid;
+  place-items: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-top: 1px;
+}
+
+.promises b {
+  display: block;
+  color: var(--navy);
+  font-weight: 600;
+}
+
+.promises span.detail {
+  color: var(--steel);
+  font-size: 0.95rem;
+}
+
+/* The trust block. Deliberately the loudest non-CTA thing on the page. */
+.trust {
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: #fff;
+  border-left: 4px solid var(--accent);
+  border-radius: 14px;
+  padding: 1.1rem 1.2rem;
+  box-shadow: var(--shadow-card);
+}
+
+.trust h2 {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  margin: 0 0 0.45rem;
+  color: var(--navy);
+}
+
+.trust p {
+  margin: 0 0 0.55rem;
+  color: var(--steel);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.trust p:last-child {
+  margin-bottom: 0;
+}
+
+.disclaimer {
+  margin-top: 1.4rem;
+  font-size: 0.85rem;
+  color: var(--steel);
+  line-height: 1.6;
+  max-width: 48ch;
+}
+
+/* ---------- Right: the form ---------- */
+
+.start-card {
+  background: #fff;
+  border: 1px solid var(--mist);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: clamp(1.2rem, 3vw, 1.9rem);
+}
+
+.start-card h2 {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  margin: 0 0 0.25rem;
+}
+
+.start-card .card-sub {
+  color: var(--steel);
+  margin: 0 0 1.3rem;
+  font-size: 0.95rem;
+}
+
+.start-card .field {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.start-card .field > span.label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+  color: var(--navy);
+}
+
+.start-card .field > span.hint {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--steel);
+  margin-top: 0.3rem;
+  line-height: 1.5;
+}
+
+.start-card input[type='text'],
+.start-card input[type='email'],
+.start-card input[type='tel'],
+.start-card input[type='password'],
+.start-card select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.68rem 0.75rem;
+  border: 1px solid #cfd8e3;
+  border-radius: 10px;
+  font: 400 0.98rem var(--font-sans);
+  color: var(--navy);
+  background: #fff;
+}
+
+.start-card input:focus-visible,
+.start-card select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 0.9rem;
+}
+
+@media (max-width: 520px) {
+  .pair {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field-error {
+  display: block;
+  color: var(--danger);
+  font-size: 0.82rem;
+  margin-top: 0.3rem;
+  font-weight: 500;
+}
+
+.has-error input,
+.has-error select {
+  border-color: var(--danger);
+}
+
+.error-summary {
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  background: rgba(220, 38, 38, 0.06);
+  color: #991b1b;
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1.1rem;
+  font-size: 0.92rem;
+}
+
+/* ---------- Radio group (books status) ---------- */
+
+fieldset.group {
+  border: 0;
+  padding: 0;
+  margin: 0 0 1rem;
+}
+
+fieldset.group > legend {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--navy);
+  padding: 0;
+  margin-bottom: 0.4rem;
+}
+
+.radio-row {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.radio-row label {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 0.6rem;
+  align-items: start;
+  border: 1px solid #cfd8e3;
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+  cursor: pointer;
+  line-height: 1.45;
+}
+
+.radio-row label:hover {
+  border-color: var(--accent);
+}
+
+.radio-row input {
+  margin: 2px 0 0;
+}
+
+.radio-row b {
+  font-weight: 600;
+  color: var(--navy);
+  font-size: 0.95rem;
+}
+
+.radio-row em {
+  display: block;
+  font-style: normal;
+  color: var(--steel);
+  font-size: 0.85rem;
+}
+
+/* ---------- Consents: three separate boxes, never bundled ---------- */
+
+.consents {
+  border-top: 1px solid var(--mist);
+  margin-top: 1.4rem;
+  padding-top: 1.2rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.consent {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 0.65rem;
+  align-items: start;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--steel);
+}
+
+.consent input {
+  margin: 3px 0 0;
+  width: 17px;
+  height: 17px;
+  accent-color: var(--accent-600);
+}
+
+.consent b {
+  display: block;
+  color: var(--navy);
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.consent .optional {
+  color: var(--accent-600);
+  font-weight: 500;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
+
+.start-card .submit {
+  margin-top: 1.4rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--ink);
+  font: 600 1rem var(--font-sans);
+  cursor: pointer;
+}
+
+.start-card .submit:hover {
+  background: var(--accent-400);
+}
+
+.after-submit {
+  margin-top: 0.9rem;
+  font-size: 0.85rem;
+  color: var(--steel);
+  text-align: center;
+  line-height: 1.55;
+}
+
+.start-foot {
+  border-top: 1px solid var(--mist);
+  padding: 1.4rem clamp(1rem, 4vw, 3rem);
+  color: var(--steel);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* ---------- The confirmation page ---------- */
+
+.done-wrap {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: clamp(2.5rem, 8vw, 5rem) 1.25rem;
+  text-align: center;
+}
+
+.done-wrap .mark {
+  width: 58px;
+  height: 58px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.14);
+  color: var(--accent-600);
+  display: grid;
+  place-items: center;
+  margin: 0 auto 1.2rem;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.done-wrap h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  letter-spacing: -0.02em;
+  margin: 0 0 0.7rem;
+}
+
+.done-wrap p {
+  color: var(--steel);
+  line-height: 1.7;
+  margin: 0 auto 1rem;
+  max-width: 52ch;
+}
+
+.done-wrap .btn-go {
+  display: inline-block;
+  margin-top: 0.9rem;
+  padding: 0.8rem 1.6rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.done-wrap .btn-go:hover {
+  background: var(--accent-400);
+}
+
+.next-list {
+  text-align: left;
+  max-width: 46ch;
+  margin: 1.6rem auto 0;
+  color: var(--steel);
+  line-height: 1.7;
+  padding-left: 1.1rem;
+}
+
+.next-list li {
+  margin-bottom: 0.5rem;
+}
+
+/* -------------------------------------------------------------------
+   Onboarding wizard chrome. Lives inside the authenticated app layout,
+   so this is additive to portal.css rather than a separate world.
+------------------------------------------------------------------- */
+
+.wiz-head {
+  margin-bottom: 1.2rem;
+}
+
+.wiz-head h1 {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.25rem;
+}
+
+.wiz-head .sub {
+  color: var(--steel);
+  margin: 0;
+  max-width: 62ch;
+}
+
+.wiz-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 0.9rem 0 1.2rem;
+}
+
+.wiz-progress progress {
+  flex: 1;
+  height: 8px;
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  background: var(--mist);
+  overflow: hidden;
+}
+
+.wiz-progress progress::-webkit-progress-bar {
+  background: var(--mist);
+  border-radius: 999px;
+}
+
+.wiz-progress progress::-webkit-progress-value {
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+.wiz-progress progress::-moz-progress-bar {
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+.wiz-progress .count {
+  font-size: 0.85rem;
+  color: var(--steel);
+  white-space: nowrap;
+}
+
+.wiz-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.4rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.wiz-steps a,
+.wiz-steps span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--mist);
+  border-radius: 999px;
+  padding: 0.32rem 0.75rem;
+  font-size: 0.83rem;
+  text-decoration: none;
+  color: var(--steel);
+  background: #fff;
+}
+
+.wiz-steps a:hover {
+  border-color: var(--accent);
+  color: var(--navy);
+}
+
+.wiz-steps .current a,
+.wiz-steps .current span {
+  background: var(--navy);
+  color: #fff;
+  border-color: var(--navy);
+}
+
+.wiz-steps .done a::before {
+  content: '✓';
+  color: var(--accent-600);
+  font-weight: 700;
+}
+
+.wiz-card {
+  background: #fff;
+  border: 1px solid var(--mist);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: clamp(1rem, 3vw, 1.6rem);
+  margin-bottom: 1.2rem;
+}
+
+.wiz-card h2 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  margin: 0 0 0.3rem;
+}
+
+.wiz-card .card-sub {
+  color: var(--steel);
+  font-size: 0.92rem;
+  margin: 0 0 1.1rem;
+  max-width: 66ch;
+  line-height: 1.6;
+}
+
+.wiz-field {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.wiz-field > span.label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.88rem;
+  margin-bottom: 0.3rem;
+}
+
+.wiz-field > span.hint {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--steel);
+  margin-top: 0.28rem;
+  line-height: 1.5;
+}
+
+.wiz-field input[type='text'],
+.wiz-field input[type='email'],
+.wiz-field input[type='tel'],
+.wiz-field input[type='number'],
+.wiz-field input[type='password'],
+.wiz-field input[type='date'],
+.wiz-field select,
+.wiz-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid #cfd8e3;
+  border-radius: 10px;
+  font: 400 0.95rem var(--font-sans);
+  color: var(--navy);
+  background: #fff;
+}
+
+.wiz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0 1rem;
+}
+
+.check-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+}
+
+.check-grid label,
+.check-stack label {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 0.55rem;
+  align-items: start;
+  border: 1px solid var(--mist);
+  border-radius: 10px;
+  padding: 0.55rem 0.65rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.check-stack {
+  display: grid;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+}
+
+.check-grid label:hover,
+.check-stack label:hover {
+  border-color: var(--accent);
+}
+
+.check-grid input,
+.check-stack input {
+  margin-top: 2px;
+  accent-color: var(--accent-600);
+}
+
+.check-stack em {
+  display: block;
+  font-style: normal;
+  color: var(--steel);
+  font-size: 0.82rem;
+}
+
+/* Repeatable rows (accounts, phone numbers) */
+
+.rows {
+  display: grid;
+  gap: 0.7rem;
+  margin-bottom: 1rem;
+}
+
+.row-card {
+  border: 1px solid var(--mist);
+  border-radius: 12px;
+  padding: 0.75rem;
+  background: var(--paper);
+}
+
+.row-card .row-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1.2fr 0.6fr;
+  gap: 0.6rem;
+}
+
+@media (max-width: 720px) {
+  .row-card .row-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.row-card input,
+.row-card select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.55rem 0.6rem;
+  border: 1px solid #cfd8e3;
+  border-radius: 9px;
+  font: 400 0.92rem var(--font-sans);
+}
+
+.row-card .mini {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--steel);
+  margin-bottom: 0.2rem;
+  font-weight: 600;
+}
+
+.row-card .keep {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--steel);
+  margin-top: 0.5rem;
+}
+
+.hard-rule {
+  border-left: 4px solid var(--accent);
+  background: rgba(16, 185, 129, 0.06);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.1rem;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--navy);
+}
+
+.hard-rule b {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.wiz-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-top: 1.2rem;
+}
+
+.wiz-actions .spacer {
+  flex: 1;
+}
+
+.errors {
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  background: rgba(220, 38, 38, 0.06);
+  color: #991b1b;
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1.1rem;
+  font-size: 0.9rem;
+}
+
+.errors ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+}
+
+/* Plan suggestion (section G) */
+
+.plan-card {
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.2rem;
+  background: #fff;
+  margin-bottom: 1.1rem;
+}
+
+.plan-card .plan-name {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.plan-card .plan-price {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+  margin: 0.2rem 0 0.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-card .plan-price small {
+  font-size: 0.9rem;
+  color: var(--steel);
+  font-weight: 400;
+}
+
+.plan-card ul {
+  margin: 0.8rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--steel);
+  line-height: 1.65;
+  font-size: 0.92rem;
+}
+
+.pending-step {
+  border: 1px dashed #cfd8e3;
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.9rem;
+  background: var(--paper);
+}
+
+.pending-step h3 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  margin: 0 0 0.3rem;
+}
+
+.pending-step p {
+  margin: 0;
+  color: var(--steel);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.pending-step .tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--steel);
+  border: 1px solid var(--mist);
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  margin-left: 0.4rem;
+  vertical-align: 2px;
+}
+
+.pay-options {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.9rem 0 1rem;
+}
+
+.pay-options label {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 0.6rem;
+  align-items: start;
+  border: 1px solid var(--mist);
+  border-radius: 12px;
+  padding: 0.7rem 0.8rem;
+  cursor: pointer;
+}
+
+.pay-options label:hover {
+  border-color: var(--accent);
+}
+
+.pay-options b {
+  color: var(--navy);
+}
+
+.pay-options .rec {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-600);
+  margin-left: 0.35rem;
+}
+
+.pay-options em {
+  display: block;
+  font-style: normal;
+  color: var(--steel);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  margin-top: 0.15rem;
+}
+
+.invite-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.invite-table th,
+.invite-table td {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--mist);
+}
+
+.invite-table th {
+  color: var(--steel);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.doc-item {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  gap: 0.65rem;
+  align-items: start;
+  border: 1px solid var(--mist);
+  border-radius: 12px;
+  padding: 0.7rem 0.8rem;
+  margin-bottom: 0.55rem;
+}
+
+.doc-item b {
+  display: block;
+  font-size: 0.94rem;
+}
+
+.doc-item em {
+  display: block;
+  font-style: normal;
+  color: var(--steel);
+  font-size: 0.83rem;
+  line-height: 1.5;
+}

@@ -1,0 +1,35 @@
+<% layout('../layout') %>
+<%~ include('_head', it) %>
+
+<form method="post" action="<%= it.actionUrl %>" class="stack">
+  <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+
+  <div class="wiz-card">
+    <h2>What we need from you</h2>
+    <p class="card-sub">
+      Every one of these can be photographed from your phone — a clear picture of a
+      paper statement is as good as a PDF. Tick what you have already sent so we do
+      not chase you for it.
+    </p>
+
+    <% it.checklist.forEach(function (d) { %>
+      <div class="doc-item">
+        <input type="checkbox" name="have" value="<%= d.key %>" <%= it.have.has(d.key) ? 'checked' : '' %>
+               aria-label="<%= d.label %> sent">
+        <span>
+          <b><%= d.label %></b>
+          <em><%= d.hint %></em>
+        </span>
+        <a class="btn btn-ghost btn-sm" href="<%= it.uploadUrl %>">Upload</a>
+      </div>
+    <% }) %>
+
+    <label class="wiz-field">
+      <span class="label">Anything we should know about these?</span>
+      <textarea name="notes" rows="3"><%= it.answers.notes || '' %></textarea>
+      <span class="hint">"The 2023 return is with my old CPA and I'm chasing it" is a useful answer.</span>
+    </label>
+  </div>
+
+  <%~ include('_actions', it) %>
+</form>

@@ -1,0 +1,139 @@
+<% layout('../layout') %>
+<%~ include('_head', it) %>
+
+<form method="post" action="<%= it.actionUrl %>" class="stack">
+  <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+
+  <div class="wiz-card">
+    <h2>The legal facts</h2>
+    <p class="card-sub">
+      What the IRS and the state think your business is called. If the name on the
+      bank account differs from the name on the sign, we want both.
+    </p>
+
+    <div class="wiz-grid">
+      <label class="wiz-field">
+        <span class="label">Legal entity name</span>
+        <input type="text" name="legalName" value="<%= (it.client && it.client.legalName) || '' %>">
+        <span class="hint">As it appears on your formation documents.</span>
+      </label>
+
+      <label class="wiz-field">
+        <span class="label">DBA / trading name</span>
+        <input type="text" name="dba" value="<%= it.answers.dba || '' %>">
+        <span class="hint">Leave blank if it is the same.</span>
+      </label>
+
+      <label class="wiz-field">
+        <span class="label">Entity type</span>
+        <select name="entityType">
+          <option value="">Choose…</option>
+          <% it.entityTypes.forEach(function (e) { %>
+            <option value="<%= e.value %>" <%= (it.client && it.client.entityType) === e.value ? 'selected' : '' %>><%= e.label %></option>
+          <% }) %>
+        </select>
+      </label>
+
+      <label class="wiz-field">
+        <span class="label">EIN</span>
+        <input type="text" name="ein" inputmode="numeric" placeholder="12-3456789"
+               autocomplete="off">
+        <span class="hint">
+          <% if (it.einOnFile) { %>
+            On file<% if (it.einMask) { %> as <strong><%= it.einMask %></strong><% } %>.
+            Encrypted at rest, and we only ever show you the last four. Type a new one to replace it.
+          <% } else { %>
+            Encrypted the moment you save it. We show you the last four and nothing more,
+            ever — including to ourselves in the admin screens.
+          <% } %>
+        </span>
+      </label>
+
+      <label class="wiz-field">
+        <span class="label">Formation state</span>
+        <input type="text" name="formationState" value="<%= (it.client && it.client.formationState) || '' %>" placeholder="Texas">
+      </label>
+
+      <label class="wiz-field">
+        <span class="label">Formation date</span>
+        <input type="date" name="formationDate" value="<%= it.answers.formationDate || '' %>">
+      </label>
+
+      <label class="wiz-field">
+        <span class="label">Texas taxpayer number</span>
+        <input type="text" name="txTaxpayerNumber" value="<%= it.answers.txTaxpayerNumber || '' %>">
+        <span class="hint">Only if you have one — it drives franchise tax reminders.</span>
+      </label>
+
+      <label class="wiz-field">
+        <span class="label">Fiscal year end</span>
+        <input type="text" name="fiscalYearEnd" value="<%= (it.client && it.client.fiscalYearEnd) || '' %>" placeholder="December 31">
+      </label>
+    </div>
+  </div>
+
+  <div class="wiz-card">
+    <h2>Where you are</h2>
+    <p class="card-sub">Physical address first. If mail goes somewhere else, tell us below.</p>
+
+    <label class="wiz-field">
+      <span class="label">Street address</span>
+      <input type="text" name="addressLine1" value="<%= (it.client && it.client.addressLine1) || '' %>">
+    </label>
+    <label class="wiz-field">
+      <span class="label">Suite, unit, floor</span>
+      <input type="text" name="addressLine2" value="<%= (it.client && it.client.addressLine2) || '' %>">
+    </label>
+
+    <div class="wiz-grid">
+      <label class="wiz-field">
+        <span class="label">City</span>
+        <input type="text" name="city" value="<%= (it.client && it.client.city) || '' %>">
+      </label>
+      <label class="wiz-field">
+        <span class="label">State</span>
+        <input type="text" name="state" value="<%= (it.client && it.client.state) || '' %>">
+      </label>
+      <label class="wiz-field">
+        <span class="label">ZIP</span>
+        <input type="text" name="postalCode" value="<%= (it.client && it.client.postalCode) || '' %>">
+      </label>
+      <label class="wiz-field">
+        <span class="label">Website</span>
+        <input type="text" name="website" value="<%= (it.client && it.client.website) || '' %>">
+      </label>
+    </div>
+
+    <div class="check-stack">
+      <label>
+        <input type="checkbox" name="mailingSame" value="on" <%= it.answers.mailingSameAsPhysical === false ? '' : 'checked' %>>
+        <span><b>Mail comes to the same address</b><em>Untick to give us a separate mailing address.</em></span>
+      </label>
+    </div>
+
+    <div class="wiz-grid">
+      <label class="wiz-field">
+        <span class="label">Mailing street</span>
+        <input type="text" name="mailingLine1" value="<%= (it.answers.mailingAddress && it.answers.mailingAddress.line1) || '' %>">
+      </label>
+      <label class="wiz-field">
+        <span class="label">Mailing suite</span>
+        <input type="text" name="mailingLine2" value="<%= (it.answers.mailingAddress && it.answers.mailingAddress.line2) || '' %>">
+      </label>
+      <label class="wiz-field">
+        <span class="label">Mailing city</span>
+        <input type="text" name="mailingCity" value="<%= (it.answers.mailingAddress && it.answers.mailingAddress.city) || '' %>">
+      </label>
+      <label class="wiz-field">
+        <span class="label">Mailing state</span>
+        <input type="text" name="mailingState" value="<%= (it.answers.mailingAddress && it.answers.mailingAddress.state) || '' %>">
+      </label>
+      <label class="wiz-field">
+        <span class="label">Mailing ZIP</span>
+        <input type="text" name="mailingPostalCode" value="<%= (it.answers.mailingAddress && it.answers.mailingAddress.postalCode) || '' %>">
+      </label>
+    </div>
+  </div>
+
+  <%~ include('_actions', it) %>
+</form>

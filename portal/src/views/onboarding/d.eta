@@ -1,0 +1,94 @@
+<% layout('../layout') %>
+<%~ include('_head', it) %>
+
+<div class="wiz-card">
+  <h2>Invite a colleague</h2>
+  <p class="card-sub">
+    The office manager who uploads the invoices is exactly the person who should be
+    in here. Invites expire in 7 days, and we tell you every time one is used.
+  </p>
+
+  <% if (it.isOwner) { %>
+    <form method="post" action="<%= it.inviteAction %>" class="stack">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <div class="wiz-grid">
+        <label class="wiz-field">
+          <span class="label">Their name</span>
+          <input type="text" name="name" required>
+        </label>
+        <label class="wiz-field">
+          <span class="label">Their work email</span>
+          <input type="email" name="email" required>
+        </label>
+      </div>
+
+      <div class="check-stack">
+        <% it.accessLevels.forEach(function (l, i) { %>
+          <label>
+            <input type="radio" name="access" value="<%= l.value %>" <%= i === 0 ? 'checked' : '' %>>
+            <span><b><%= l.label %></b><em><%= l.blurb %></em></span>
+          </label>
+        <% }) %>
+      </div>
+
+      <button class="btn btn-primary btn-sm" type="submit">Send invite</button>
+    </form>
+  <% } else { %>
+    <div class="hard-rule">
+      <b>Only the account owner can invite colleagues.</b>
+      That is deliberate — it keeps one person accountable for who can see your
+      numbers. Ask them to send it, or message us and we will.
+    </div>
+  <% } %>
+</div>
+
+<% if (it.invites.length > 0) { %>
+  <div class="wiz-card">
+    <h2>Invited so far</h2>
+    <table class="invite-table">
+      <thead>
+        <tr><th>Name</th><th>Email</th><th>Access</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <% it.invites.forEach(function (inv) { %>
+          <tr>
+            <td><%= inv.name %></td>
+            <td><%= inv.email %></td>
+            <td><%= inv.access === 'full' ? 'Full access' : 'Contributor' %></td>
+            <td>
+              <% if (inv.acceptedAt) { %>Joined <%= it.fmtDate(inv.acceptedAt) %>
+              <% } else { %>Invited · expires <%= it.fmtDate(inv.expiresAt) %><% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <p class="muted small">
+      Our admin can see every user on your account and revoke any of them. So can you,
+      by messaging us — no ticket, no delay.
+    </p>
+  </div>
+<% } %>
+
+<form method="post" action="<%= it.actionUrl %>" class="stack">
+  <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+  <div class="wiz-card">
+    <h2>Who signs</h2>
+    <p class="card-sub">
+      The person authorised to sign the engagement letter and approve payments.
+      Usually you.
+    </p>
+    <div class="wiz-grid">
+      <label class="wiz-field">
+        <span class="label">Authorised signer</span>
+        <input type="text" name="authorizedSigner" value="<%= it.answers.authorizedSigner || '' %>">
+      </label>
+      <label class="wiz-field">
+        <span class="label">Their title</span>
+        <input type="text" name="authorizedSignerTitle" value="<%= it.answers.authorizedSignerTitle || '' %>" placeholder="Owner">
+      </label>
+    </div>
+  </div>
+
+  <%~ include('_actions', it) %>
+</form>

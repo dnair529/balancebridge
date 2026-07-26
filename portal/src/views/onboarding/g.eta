@@ -1,0 +1,100 @@
+<% layout('../layout') %>
+<%~ include('_head', it) %>
+
+<div class="plan-card">
+  <p class="muted small">Suggested plan, based on what you told us</p>
+  <p class="plan-name"><%= it.suggestion.planLabel %></p>
+  <p class="plan-price">
+    <%= it.fmtMoney(it.suggestion.monthlyFeeCents) %><small> / month, starting at</small>
+  </p>
+  <p class="muted small">Books closed by the <%= it.suggestion.closeTargetDay %>th business day.</p>
+
+  <% if (it.suggestion.catchUpFeeCents > 0) { %>
+    <p class="muted small">
+      Plus a one-off catch-up project of about <strong><%= it.fmtMoney(it.suggestion.catchUpFeeCents) %></strong> —
+      half at signature, half on delivery. Catch-up is front-loaded work, so it is
+      priced separately rather than hidden in the monthly fee.
+    </p>
+  <% } %>
+
+  <ul>
+    <% it.suggestion.reasons.forEach(function (r) { %><li><%= r %></li><% }) %>
+  </ul>
+
+  <p class="muted small">
+    This is a suggestion, not an invoice. A human reads your answers, confirms or
+    changes it, and you see the final number in writing before anything starts.
+  </p>
+</div>
+
+<div class="wiz-card">
+  <h2>Engagement letter and payment</h2>
+  <p class="card-sub">
+    Payment goes on file with the signed letter, and the first charge happens the day
+    your bookkeeper is assigned — never before. We do not start costing you money
+    before you have someone doing the work.
+  </p>
+
+  <div class="pending-step">
+    <h3>
+      <%= it.engagement.heading %>
+      <% if (!it.engagement.configured) { %><span class="tag">Pending</span><% } %>
+    </h3>
+    <p><%= it.engagement.body %></p>
+    <% if (it.engagement.configured && it.engagement.href) { %>
+      <p><a class="btn btn-ghost btn-sm" href="<%= it.engagement.href %>">Open e-signature</a></p>
+    <% } %>
+  </div>
+
+  <div class="pending-step">
+    <h3>
+      <%= it.payment.heading %>
+      <% if (!it.payment.configured) { %><span class="tag">Pending</span><% } %>
+    </h3>
+    <p><%= it.payment.body %></p>
+    <% if (it.payment.configured && it.payment.href) { %>
+      <p><a class="btn btn-ghost btn-sm" href="<%= it.payment.href %>">Set up payment</a></p>
+    <% } %>
+  </div>
+</div>
+
+<form method="post" action="<%= it.actionUrl %>" class="stack">
+  <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+
+  <div class="wiz-card">
+    <h2>How would you like to pay?</h2>
+    <p class="card-sub">
+      Bank transfer costs a fraction of what a card costs to process, so choosing it
+      keeps more of your fee in the work rather than in processing charges.
+    </p>
+
+    <div class="pay-options">
+      <% it.paymentOptions.forEach(function (o) { %>
+        <label>
+          <input type="radio" name="paymentPreference" value="<%= o.value %>"
+                 <%= (it.answers.paymentPreference || 'ach') === o.value ? 'checked' : '' %>>
+          <span>
+            <b><%= o.label %></b><% if (o.recommended) { %><span class="rec">Default</span><% } %>
+            <em><%= o.detail %></em>
+          </span>
+        </label>
+      <% }) %>
+    </div>
+
+    <div class="check-stack">
+      <label>
+        <input type="checkbox" name="acknowledge" value="on" <%= it.answers.acknowledged ? 'checked' : '' %>>
+        <span>
+          <b>I have read the suggested plan</b>
+          <em>Ticking this does not sign anything or authorise a charge. It tells us you are ready for the written quote.</em>
+        </span>
+      </label>
+    </div>
+  </div>
+
+  <%~ include('_actions', it) %>
+</form>
+
+<% if (it.submittedAt) { %>
+  <p class="muted small">Submitted for review <%= it.fmtDateTime(it.submittedAt) %>.</p>
+<% } %>

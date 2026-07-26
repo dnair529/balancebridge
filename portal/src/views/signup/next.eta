@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>We’ve got it — Balance Bridge Financial</title>
+  <link rel="stylesheet" href="/assets/portal.css">
+  <link rel="stylesheet" href="/assets/signup.css">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <% if (it.signedIn) { %>
+  <!-- Signed in: continue straight into the wizard. The page still renders
+       identically for everyone, so the response to POST /start reveals nothing
+       about whether the email already had an account. -->
+  <meta http-equiv="refresh" content="0;url=/onboarding">
+  <% } %>
+</head>
+<body class="start">
+<header class="start-top">
+  <a class="brand" href="/login">
+    <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 25h24" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/><path d="M6 21c3-8 17-8 20 0" stroke="#10B981" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M10 21v4M22 21v4" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/></svg>
+    <span class="brand-word">Balance Bridge <span>FINANCIAL</span></span>
+  </a>
+  <a class="quiet" href="/login">Sign in</a>
+</header>
+
+<main class="done-wrap">
+  <div class="mark" aria-hidden="true">✓</div>
+  <h1>We’ve got it</h1>
+  <p>
+    Your books review has started. Check your email — everything you need to pick
+    up from here is in it, including the link back into your portal.
+  </p>
+  <p>
+    Next up is a short onboarding wizard. Seven small sections, saved as you go,
+    and you can stop halfway and come back tomorrow without losing anything.
+  </p>
+
+  <a class="btn-go" href="/onboarding">Continue to onboarding</a>
+
+  <ul class="next-list">
+    <li><strong>Sections A to C unlock a real quote</strong> — the legal basics, what you want us doing, and which accounts we would reconcile.</li>
+    <li><strong>We never ask for full account numbers or banking passwords.</strong> Last four digits is all we need.</li>
+    <li><strong>A person reads it within one business day</strong> and comes back with what we found and a fixed monthly price.</li>
+  </ul>
+</main>
+
+<footer class="start-foot">
+  Balance Bridge Financial · <a href="/login">Sign in</a>
+</footer>
+</body>
+</html>

@@ -1,0 +1,10 @@
+<!-- Save / navigate footer, shared by every section. -->
+<div class="wiz-actions">
+  <button class="btn btn-primary" type="submit">Save and continue</button>
+  <span class="spacer"></span>
+  <% if (it.prev) { %>
+    <a class="btn btn-ghost btn-sm" href="/onboarding/<%= it.prev.key %><%= it.staffQuery %>">← <%= it.prev.title %></a>
+  <% } %>
+  <a class="btn btn-ghost btn-sm" href="/onboarding<%= it.staffQuery %>">All sections</a>
+</div>
+<p class="muted small">Saved section by section. Close this tab and come back whenever — nothing is lost.</p>

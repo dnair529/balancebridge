@@ -1,0 +1,93 @@
+<% layout('../layout') %>
+<%~ include('_head', it) %>
+
+<form method="post" action="<%= it.actionUrl %>" class="stack">
+  <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+
+  <div class="wiz-card">
+    <h2>How you want to hear from us</h2>
+    <p class="card-sub">
+      Notifications never contain amounts, vendors or balances — just "you have
+      something waiting" and a link. Email is not a secure channel and a phone on a
+      truck seat is not a private device.
+    </p>
+
+    <div class="check-stack">
+      <% it.channels.forEach(function (c) { %>
+        <label>
+          <input type="radio" name="preferredChannel" value="<%= c.value %>"
+                 <%= (it.answers.preferredChannel || 'sms') === c.value ? 'checked' : '' %>>
+          <span><b><%= c.label %></b></span>
+        </label>
+      <% }) %>
+    </div>
+
+    <div class="wiz-grid">
+      <label class="wiz-field">
+        <span class="label">Best hours to reach you</span>
+        <input type="text" name="bestHours" value="<%= it.answers.bestHours || '' %>" placeholder="Weekdays before 8am, or after 5">
+      </label>
+      <label class="wiz-field">
+        <span class="label">Monthly summary</span>
+        <select name="monthlySummary">
+          <option value="email" <%= it.answers.monthlySummary === 'email' ? 'selected' : '' %>>Email it to me</option>
+          <option value="portal" <%= it.answers.monthlySummary === 'portal' ? 'selected' : '' %>>Portal only</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <div class="wiz-card">
+    <h2>Additional numbers we can text</h2>
+    <p class="card-sub">
+      A field manager's phone, a second owner, the person who actually has the
+      receipts. <strong>Each number needs its own consent</strong> — we will not text a number
+      whose owner has not agreed to it, and one person cannot consent for another.
+    </p>
+
+    <div class="rows">
+      <% var idx = 0; %>
+      <% it.phones.forEach(function (p) { %>
+        <div class="row-card">
+          <div class="row-grid">
+            <label>
+              <span class="mini">Mobile number</span>
+              <input type="tel" name="phone" value="<%= p.phone %>">
+            </label>
+            <label>
+              <span class="mini">Whose is it?</span>
+              <input type="text" name="phoneLabel" value="<%= p.label || '' %>" placeholder="Marco — site foreman">
+            </label>
+          </div>
+          <label class="keep">
+            <input type="checkbox" name="phoneConsentRows" value="<%= idx %>" <%= p.consent ? 'checked' : '' %>>
+            This person has agreed to receive texts from Balance Bridge about the account. Message and data rates may apply; reply STOP to opt out.
+          </label>
+        </div>
+        <% idx += 1; %>
+      <% }) %>
+
+      <% it.blankRows.forEach(function () { %>
+        <div class="row-card">
+          <div class="row-grid">
+            <label>
+              <span class="mini">Mobile number</span>
+              <input type="tel" name="phone" placeholder="(512) 555-0147">
+            </label>
+            <label>
+              <span class="mini">Whose is it?</span>
+              <input type="text" name="phoneLabel" placeholder="Marco — site foreman">
+            </label>
+          </div>
+          <label class="keep">
+            <input type="checkbox" name="phoneConsentRows" value="<%= idx %>">
+            This person has agreed to receive texts from Balance Bridge about the account. Message and data rates may apply; reply STOP to opt out.
+          </label>
+        </div>
+        <% idx += 1; %>
+      <% }) %>
+    </div>
+  </div>
+
+  <%~ include('_actions', it) %>
+</form>

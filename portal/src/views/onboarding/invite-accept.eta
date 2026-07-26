@@ -1,0 +1,28 @@
+<% layout('../layout') %>
+<h1 class="auth-title">Join <%= it.businessName %></h1>
+<p class="auth-sub">
+  You have been invited to the Balance Bridge portal as
+  <strong><%= it.accessLabel %></strong>. <%= it.accessBlurb %>
+</p>
+
+<form method="post" action="/onboarding/invite/<%= it.token %>" class="stack">
+  <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+  <label class="field">
+    <span>Email</span>
+    <input type="email" value="<%= it.email %>" disabled autocomplete="username">
+  </label>
+  <label class="field">
+    <span>Your name</span>
+    <input type="text" name="name" required autocomplete="name" autofocus>
+  </label>
+  <label class="field">
+    <span>Choose a password</span>
+    <input type="password" name="password" required minlength="<%= it.minPassword %>" autocomplete="new-password">
+  </label>
+  <button class="btn btn-primary btn-block" type="submit">Create my account</button>
+</form>
+
+<p class="auth-links">
+  This invite expires 7 days after it was sent. Already have an account?
+  <a href="/login">Sign in</a>.
+</p>

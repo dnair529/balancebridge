@@ -23,6 +23,8 @@ import { webhookRoutes } from './routes/webhooks.js';
 import { intakeRoutes } from './routes/intake.js';
 import { workspaceRoutes } from './routes/workspace.js';
 import { clientRoutes } from './routes/client.js';
+import { signupRoutes } from './routes/signup.js';
+import { onboardingRoutes } from './routes/onboarding.js';
 
 async function build() {
   const app = Fastify({
@@ -111,6 +113,8 @@ async function build() {
 
   // ---------- Routes ----------
   await app.register(authRoutes);
+  await app.register(signupRoutes);
+  await app.register(onboardingRoutes);
   await app.register(dashboardRoutes);
   await app.register(clientRoutes);
   await app.register(documentRoutes);

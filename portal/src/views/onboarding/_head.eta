@@ -1,0 +1,33 @@
+<!-- Shared wizard chrome: title, progress bar, step pills.
+     The stylesheet link lives here rather than in layout.eta because the
+     layout is owned elsewhere; a <link rel="stylesheet"> in the body is
+     valid HTML and is honoured by every browser. -->
+<link rel="stylesheet" href="/assets/signup.css">
+
+<div class="wiz-head">
+  <h1><%= it.section.title %></h1>
+  <p class="sub"><%= it.section.blurb %></p>
+</div>
+
+<div class="wiz-progress">
+  <progress value="<%= it.progress.done %>" max="<%= it.progress.total %>"
+            aria-label="Onboarding progress"></progress>
+  <span class="count"><%= it.progress.done %> of <%= it.progress.total %> sections saved</span>
+</div>
+
+<ul class="wiz-steps">
+  <% it.sections.forEach(function (s, i) { %>
+    <li class="<%= s.key === it.sectionKey ? 'current' : '' %> <%= s.done ? 'done' : '' %>">
+      <a href="/onboarding/<%= s.key %><%= it.staffQuery %>"><%= i + 1 %>. <%= s.title %></a>
+    </li>
+  <% }) %>
+</ul>
+
+<% if (it.hasErrors) { %>
+  <div class="errors" role="alert">
+    <strong>Nothing was saved yet — these need a fix first:</strong>
+    <ul>
+      <% it.errors.forEach(function (e) { %><li><%= e %></li><% }) %>
+    </ul>
+  </div>
+<% } %>
