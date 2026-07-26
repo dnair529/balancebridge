@@ -1,0 +1,164 @@
+<% layout('../layout') %>
+<% var b = it.brief; %>
+
+<div class="ws-head">
+  <div>
+    <p><a class="link" href="/workspace">← Work queue</a></p>
+    <h1><%= b.client.businessName %></h1>
+    <p class="ws-count">
+      <% if (b.lastViewedAt) { %>
+        What changed since you last looked, <%= it.fmtDateTime(b.lastViewedAt) %>.
+      <% } else { %>
+        First time you’ve opened this brief — showing the last fourteen days.
+      <% } %>
+    </p>
+  </div>
+  <div class="action-row">
+    <a class="btn btn-ghost btn-sm" href="/workspace/categorize/<%= b.client.id %>">Categorize</a>
+    <a class="btn btn-ghost btn-sm" href="/workspace/close/<%= b.client.id %>">Close</a>
+    <a class="btn btn-ghost btn-sm" href="/admin/clients/<%= b.client.id %>">Admin record</a>
+  </div>
+</div>
+
+<div class="ws-facts">
+  <span class="ws-fact"><span class="v"><%= b.uncategorizedCount %></span><span class="k">uncategorized</span></span>
+  <span class="ws-fact"><span class="v"><%= b.openQuestions.length %></span><span class="k">open questions</span></span>
+  <span class="ws-fact"><span class="v"><%= b.openAnomalies.length %></span><span class="k">flagged items</span></span>
+  <span class="ws-fact"><span class="v"><%= b.openDocRequests.length %></span><span class="k">docs outstanding</span></span>
+  <span class="ws-fact"><span class="v"><%= b.openWorkItems.length %></span><span class="k">open work items</span></span>
+  <span class="ws-fact"><span class="v"><%= Math.round(b.minutesLast30 / 6) / 10 %>h</span><span class="k">effort, last 30 days</span></span>
+</div>
+
+<% if (b.closePeriod) { %>
+<section class="card slim-card">
+  <div class="card-head">
+    <h2>Close — <%= it.fmtDate(b.closePeriod.periodStart) %> to <%= it.fmtDate(b.closePeriod.periodEnd) %></h2>
+    <a class="link" href="/workspace/close/<%= b.client.id %>">Open close →</a>
+  </div>
+  <p class="ws-why">
+    <span class="chip status-<%= b.closePeriod.status %>"><%= b.closePeriod.status.replace(/_/g, ' ') %></span>
+    <% if (b.closeVerdict) { %>
+      <span class="ws-risk-<%= b.closeVerdict.level %>"><%= b.closeVerdict.reason %></span>
+    <% } %>
+  </p>
+</section>
+<% } %>
+
+<div class="ws-brief-grid">
+  <section class="card">
+    <div class="card-head"><h2>What changed</h2></div>
+    <% if (b.changes.length === 0) { %>
+      <p class="empty">Nothing has moved on this client since you last looked.</p>
+    <% } else { %>
+      <ul class="ws-timeline">
+        <% b.changes.forEach(function (c) { %>
+          <li>
+            <span class="when"><%= it.fmtDateTime(c.at) %></span>
+            <span><span class="strong"><%= c.what %></span><% if (c.detail) { %> — <%= c.detail %><% } %></span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>What’s blocking close</h2></div>
+    <% if (b.blockers.length === 0) { %>
+      <p class="empty"><% if (b.closePeriod) { %>No failing checks on record — run the pre-flight to be sure.<% } else { %>No close period open yet.<% } %></p>
+    <% } else { %>
+      <ul class="ws-checks">
+        <% b.blockers.forEach(function (x) { %>
+          <li class="ws-check fail-<%= x.severity === 'block' ? 'block' : 'warn' %>">
+            <span class="mark"><%= x.severity === 'block' ? '✕' : '!' %></span>
+            <span>
+              <span class="label"><%= x.label %></span>
+              <% if (x.detail) { %><span class="detail"><%= x.detail %></span><% } %>
+            </span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Open questions</h2></div>
+    <% if (b.openQuestions.length === 0) { %>
+      <p class="empty">Nothing outstanding with the client.</p>
+    <% } else { %>
+      <ul class="list">
+        <% b.openQuestions.forEach(function (q) { %>
+          <li class="list-row">
+            <span class="dot"></span>
+            <span><%= q.question %></span>
+            <span class="muted small"><%= it.fmtDate(q.createdAt) %></span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Unusual items</h2><a class="link" href="/workspace/anomalies">All anomalies →</a></div>
+    <% if (b.openAnomalies.length === 0) { %>
+      <p class="empty">Nothing flagged on this client.</p>
+    <% } else { %>
+      <ul class="list">
+        <% b.openAnomalies.forEach(function (a) { %>
+          <li class="list-row">
+            <span class="chip sev-<%= a.severity %>"><%= a.severity %></span>
+            <span><span class="strong"><%= a.summary %></span></span>
+            <span class="muted small"><%= a.kind.replace(/_/g, ' ') %> · detected by <%= a.detectedBy %></span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Recent conversation</h2>
+    <% if (b.conversation.threadId) { %><a class="link" href="/messages/<%= b.conversation.threadId %>?client=<%= b.client.id %>">Open thread →</a><% } %>
+  </div>
+  <% if (!b.conversation.threadId) { %>
+    <p class="empty">No messages on file for this client.</p>
+  <% } else { %>
+    <p class="strong"><%= b.conversation.subject %> <span class="muted small">· last activity <%= it.fmtDateTime(b.conversation.lastAt) %></span></p>
+    <p class="ws-why"><%= b.conversation.summary %></p>
+  <% } %>
+</section>
+
+<% if (b.openDocRequests.length > 0) { %>
+<section class="card">
+  <div class="card-head"><h2>Still waiting on</h2></div>
+  <ul class="list">
+    <% b.openDocRequests.forEach(function (d) { %>
+      <li class="list-row">
+        <span class="dot"></span>
+        <span><%= d.label %></span>
+        <span class="muted small">asked <%= it.fmtDate(d.createdAt) %><% if (d.nudgeCount > 0) { %> · nudged <%= d.nudgeCount %>×<% } %></span>
+      </li>
+    <% }) %>
+  </ul>
+</section>
+<% } %>
+
+<% if (b.openWorkItems.length > 0) { %>
+<section class="card">
+  <div class="card-head"><h2>Open work</h2><a class="link" href="/workspace?client=<%= b.client.id %>">In the queue →</a></div>
+  <table class="ws-table">
+    <thead><tr><th>Item</th><th>Kind</th><th class="num">Items</th><th>Due</th><th>Status</th></tr></thead>
+    <tbody>
+      <% b.openWorkItems.forEach(function (w) { %>
+        <tr>
+          <td class="strong"><%= w.title %></td>
+          <td><span class="ws-kind kind-<%= w.kind %>"><%= w.kind %></span></td>
+          <td class="num"><%= w.itemCount %></td>
+          <td><%= it.fmtDate(w.dueAt) %></td>
+          <td><span class="chip status-<%= w.status %>"><%= w.status %></span></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+<% } %>

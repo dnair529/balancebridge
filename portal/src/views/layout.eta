@@ -6,7 +6,16 @@
   <meta name="robots" content="noindex">
   <title><%= it.title ? it.title + ' — ' : '' %>Balance Bridge Portal</title>
   <link rel="stylesheet" href="/assets/portal.css">
+  <link rel="stylesheet" href="/assets/pwa/pwa.css">
+  <link rel="stylesheet" href="/assets/workspace.css">
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <!-- Installable PWA: offline receipt capture for job sites with no signal. -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#0B1F33">
+  <link rel="apple-touch-icon" href="/assets/pwa/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Balance Bridge">
 </head>
 <body class="<%= it.user ? 'app' : 'auth' %>">
 <% if (it.user) { %>

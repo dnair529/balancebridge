@@ -1,0 +1,151 @@
+<% layout('../layout') %>
+<% var p = it.period; var f = it.facts; %>
+
+<div class="ws-head">
+  <div>
+    <p><a class="link" href="/workspace">← Work queue</a> · <a class="link" href="/workspace/client/<%= it.client.id %>">Client brief</a></p>
+    <h1>Close — <%= it.client.businessName %></h1>
+    <% if (p) { %>
+      <p class="ws-count"><%= it.fmtDate(p.periodStart) %> to <%= it.fmtDate(p.periodEnd) %> · target <%= it.fmtDate(p.targetDate) %> · <span class="chip status-<%= p.status %>"><%= p.status.replace(/_/g, ' ') %></span></p>
+    <% } %>
+  </div>
+  <div class="action-row">
+    <a class="btn btn-ghost btn-sm" href="/workspace/categorize/<%= it.client.id %>">Categorize</a>
+  </div>
+</div>
+
+<% if (!p) { %>
+  <section class="card">
+    <p class="empty">No close period on file for this client.</p>
+    <form method="post" action="/workspace/close/<%= it.client.id %>/open">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <button class="btn btn-primary" type="submit">Open last month’s close</button>
+    </form>
+  </section>
+<% } else { %>
+
+<% if (it.checks.length === 0) { %>
+  <div class="ws-gate blocked">Pre-flight has never run on this period. Nothing reaches a reviewer unchecked.</div>
+<% } else if (it.blockingFailures > 0) { %>
+  <div class="ws-gate blocked">
+    <span class="ws-num"><%= it.blockingFailures %></span> blocking check<%= it.blockingFailures === 1 ? '' : 's' %> failing.
+    This period cannot move to review — that is the mechanism that lets client count grow without error rate growing.
+  </div>
+<% } else { %>
+  <div class="ws-gate clear">
+    Pre-flight clean<%= it.warnings > 0 ? ' — ' + it.warnings + ' warning' + (it.warnings === 1 ? '' : 's') + ' to explain, none blocking' : '' %>.
+    Ready for a human reviewer.
+  </div>
+<% } %>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Pre-flight</h2>
+    <span class="muted small"><% if (it.lastCheckedAt) { %>last run <%= it.fmtDateTime(it.lastCheckedAt) %><% } else { %>never run<% } %></span>
+  </div>
+
+  <div class="action-row" style="margin-bottom: 0.8rem;">
+    <form method="post" action="/workspace/close/<%= it.client.id %>/preflight">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <button class="btn btn-primary btn-sm" type="submit">Run pre-flight</button>
+    </form>
+    <form method="post" action="/workspace/close/<%= it.client.id %>/advance">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <button class="btn btn-ghost btn-sm" type="submit"<%= it.readyForReview ? '' : ' disabled' %> title="<%= it.readyForReview ? 'Move to review' : 'Blocked until every blocking check passes' %>">Move to review</button>
+    </form>
+  </div>
+
+  <% if (it.checks.length === 0) { %>
+    <p class="empty">No checks recorded yet.</p>
+  <% } else { %>
+    <ul class="ws-checks">
+      <% it.checks.forEach(function (c) { %>
+        <li class="ws-check <%= c.passed ? 'pass' : (c.severity === 'block' ? 'fail-block' : 'fail-warn') %>">
+          <span class="mark"><%= c.passed ? '✓' : (c.severity === 'block' ? '✕' : '!') %></span>
+          <span>
+            <span class="label"><%= c.label %> <span class="ws-src"><%= c.severity %></span></span>
+            <% if (c.detail) { %><span class="detail"><%= c.detail %></span><% } %>
+          </span>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>
+
+<% if (f) { %>
+<section class="card">
+  <div class="card-head"><h2>What the checks are judging</h2></div>
+  <p class="ws-why">These are the counts the pre-flight ran against — so a failure can be traced without re-running anything.</p>
+  <div class="ws-facts">
+    <span class="ws-fact"><span class="v"><%= f.totalTransactions %></span><span class="k">transactions in period</span></span>
+    <span class="ws-fact"><span class="v"><%= f.uncategorizedCount %></span><span class="k">uncategorized</span></span>
+    <span class="ws-fact"><span class="v"><%= f.unreconciledAccounts.length %></span><span class="k">unreconciled accounts</span></span>
+    <span class="ws-fact"><span class="v"><%= f.negativeBalances.length %></span><span class="k">negative balances</span></span>
+    <span class="ws-fact"><span class="v"><%= f.missingDocuments.length %></span><span class="k">documents outstanding</span></span>
+    <span class="ws-fact"><span class="v"><%= f.unansweredQuestions %></span><span class="k">unanswered questions</span></span>
+    <span class="ws-fact"><span class="v"><%= f.openAnomalies %></span><span class="k">open anomalies</span></span>
+  </div>
+  <% if (f.unreconciledAccounts.length > 0) { %>
+    <table class="ws-table">
+      <thead><tr><th>Account</th><th class="num">Uncleared</th></tr></thead>
+      <tbody>
+        <% f.unreconciledAccounts.forEach(function (a) { %>
+          <tr><td><%= a.name %></td><td class="num"><%= it.fmtMoney(a.varianceCents) %></td></tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</section>
+<% } %>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Client narrative</h2>
+    <% if (p.narrativeApprovedAt) { %>
+      <span class="ws-draft-tag ws-approved-tag">approved <%= it.fmtDate(p.narrativeApprovedAt) %></span>
+    <% } else if (p.narrative) { %>
+      <span class="ws-draft-tag">draft · not sent</span>
+    <% } %>
+  </div>
+
+  <% if (p.narrative) { %>
+    <div class="ws-narrative"><%= p.narrative %></div>
+  <% } else { %>
+    <p class="empty">No narrative drafted for this period yet.</p>
+  <% } %>
+
+  <div class="action-row" style="margin-top: 0.8rem;">
+    <form method="post" action="/workspace/close/<%= it.client.id %>/narrative">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <button class="btn btn-ghost btn-sm" type="submit"><%= p.narrative ? 'Re-draft' : 'Draft narrative' %></button>
+    </form>
+    <% if (p.narrative && !p.narrativeApprovedAt) { %>
+      <form method="post" action="/workspace/close/<%= it.client.id %>/narrative/approve">
+        <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+        <button class="btn btn-primary btn-sm" type="submit">Approve narrative</button>
+      </form>
+    <% } %>
+  </div>
+  <p class="ws-keyhint">Approving records who approved it and when. It never sends anything — delivery stays a separate, deliberate act.</p>
+</section>
+
+<% if (it.history.length > 1) { %>
+<section class="card">
+  <div class="card-head"><h2>Previous periods</h2></div>
+  <table class="ws-table">
+    <thead><tr><th>Period</th><th>Target</th><th>Status</th><th>Delivered</th></tr></thead>
+    <tbody>
+      <% it.history.forEach(function (h) { %>
+        <tr>
+          <td><%= it.fmtDate(h.periodStart) %> – <%= it.fmtDate(h.periodEnd) %></td>
+          <td><%= it.fmtDate(h.targetDate) %></td>
+          <td><span class="chip status-<%= h.status %>"><%= h.status.replace(/_/g, ' ') %></span></td>
+          <td><%= it.fmtDate(h.deliveredAt) %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+<% } %>
+
+<% } %>

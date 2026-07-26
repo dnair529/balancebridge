@@ -1,0 +1,138 @@
+<% layout('../layout') %>
+<%
+  const q = it.user.role === 'client' ? '' : (it.query.client ? '?client=' + it.query.client : '');
+  const r = it.runway;
+  const positive = r.weeks === null;
+%>
+
+<div class="m-page">
+
+  <!-- ---------------------------------------------------------------- -->
+  <!-- The one number that matters                                       -->
+  <!-- ---------------------------------------------------------------- -->
+  <section class="m-hero">
+    <p class="m-hero-label">Cash on hand</p>
+    <p class="m-hero-num tabular"><%= it.fmtMoney(it.cash.cents) %></p>
+    <p class="m-hero-sub">
+      <% if (it.cash.lastActivityOn) { %>
+        Across <%= it.cash.accounts.length %> account<%= it.cash.accounts.length === 1 ? '' : 's' %>,
+        current through <%= it.fmtDate(it.cash.lastActivityOn) %>
+      <% } else { %>
+        No account activity has come through yet
+      <% } %>
+    </p>
+
+    <div class="m-runway <%= positive ? 'is-positive' : (r.weeks !== null && r.weeks < 6 ? 'is-tight' : '') %>">
+      <div class="m-runway-main">
+        <% if (positive) { %>
+          <span class="m-runway-num">Cash-flow positive</span>
+          <span class="m-runway-unit">over the last <%= r.weeksObserved %> weeks</span>
+        <% } else { %>
+          <span class="m-runway-num tabular"><%= r.weeks %></span>
+          <span class="m-runway-unit">week<%= r.weeks === 1 ? '' : 's' %> of runway</span>
+        <% } %>
+      </div>
+      <p class="m-runway-detail">
+        <% if (positive) { %>
+          Taking in <%= it.fmtMoney(r.netWeeklyCents) %> more than you spend each week.
+          Projected <%= it.fmtMoney(r.projectedCents) %> in 13 weeks.
+        <% } else { %>
+          Net <%= it.fmtMoney(r.netWeeklyCents) %> a week.
+          At this rate you'd be at <%= it.fmtMoney(r.projectedCents) %> in 13 weeks.
+        <% } %>
+        <% if (r.basis === 'thin_history') { %>
+          <span class="m-caveat">Based on only <%= r.weeksObserved %> week<%= r.weeksObserved === 1 ? '' : 's' %> of history.</span>
+        <% } %>
+      </p>
+    </div>
+
+    <% if (it.cash.accounts.length > 0) { %>
+      <ul class="m-accounts">
+        <% it.cash.accounts.forEach(function (a) { %>
+          <li>
+            <span class="m-account-name"><%= a.name %><% if (a.mask) { %> <span class="m-mask">••<%= a.mask %></span><% } %></span>
+            <span class="tabular"><%= it.fmtMoney(a.cents) %></span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <!-- ---------------------------------------------------------------- -->
+  <!-- What we need from you                                             -->
+  <!-- ---------------------------------------------------------------- -->
+  <div class="m-needs-row">
+    <a class="m-need-card <%= it.needs.total === 0 ? 'is-clear' : '' %>" href="/needs<%= q %>">
+      <span class="m-need-num"><%= it.needs.openRequests %></span>
+      <span class="m-need-label">document<%= it.needs.openRequests === 1 ? '' : 's' %> we need</span>
+    </a>
+    <a class="m-need-card <%= it.needs.openQuestions === 0 ? 'is-clear' : '' %>" href="/questions<%= q %>">
+      <span class="m-need-num"><%= it.needs.openQuestions %></span>
+      <span class="m-need-label">question<%= it.needs.openQuestions === 1 ? '' : 's' %> for you</span>
+    </a>
+  </div>
+  <% if (it.needs.total === 0) { %>
+    <p class="m-allclear">Nothing needed from you right now.</p>
+  <% } %>
+
+  <!-- ---------------------------------------------------------------- -->
+  <!-- Snap a receipt — the whole point of the mobile app                -->
+  <!-- ---------------------------------------------------------------- -->
+  <section class="m-capture" data-bb-capture-root data-endpoint="/api/pwa/upload">
+    <input type="hidden" id="bb-csrf" value="<%= it.csrf %>">
+
+    <label class="m-snap" for="bb-capture-input">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 8.5A1.5 1.5 0 014.5 7h2.2l1.2-2h8.2l1.2 2h2.2A1.5 1.5 0 0121 8.5v9A1.5 1.5 0 0119.5 19h-15A1.5 1.5 0 013 17.5z"/>
+        <circle cx="12" cy="13" r="3.5"/>
+      </svg>
+      <span>Snap a receipt</span>
+      <input id="bb-capture-input" type="file" accept="image/*" capture="environment" multiple data-bb-capture>
+    </label>
+
+    <p class="m-snap-hint" id="bb-capture-hint">
+      Works with no signal — photos queue up and send themselves when you're back online.
+    </p>
+
+    <div class="m-queue-head" id="bb-queue-head" hidden>
+      <h2>This batch</h2>
+      <button class="btn btn-ghost btn-sm" type="button" id="bb-queue-retry">Retry all</button>
+    </div>
+    <ul class="m-queue" id="bb-queue"></ul>
+  </section>
+
+  <!-- ---------------------------------------------------------------- -->
+  <!-- Recent captures                                                   -->
+  <!-- ---------------------------------------------------------------- -->
+  <section class="m-card">
+    <div class="m-card-head">
+      <h2>Recent captures</h2>
+      <a class="link" href="/documents<%= q %>">All documents →</a>
+    </div>
+    <% if (it.captures.length === 0) { %>
+      <p class="empty">Nothing captured yet. The button above is the fastest way in.</p>
+    <% } else { %>
+      <ul class="m-capture-list">
+        <% it.captures.forEach(function (c) { %>
+          <li>
+            <div class="m-capture-top">
+              <span class="chip status-<%= c.status %>"><%= c.statusLabel %></span>
+              <span class="m-capture-meta"><%= c.channelLabel %> · <%= it.fmtDateTime(c.receivedAt) %></span>
+            </div>
+            <% if (c.confirmation) { %>
+              <p class="m-confirmation"><%= c.confirmation %></p>
+            <% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <a class="m-jump" href="/insights<%= q %>">
+    <span>See how your books are doing</span>
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+  </a>
+</div>
+
+<script src="/assets/pwa/queue.js" defer></script>
+<script src="/assets/pwa/capture.js" defer></script>

@@ -1,0 +1,133 @@
+<% layout('../layout') %>
+<%
+  function qs(over) {
+    var base = { kind: it.filters.kind, client: it.filters.clientId, assigned: it.filters.assigned };
+    for (var k in over) base[k] = over[k];
+    var parts = [];
+    for (var key in base) { if (base[key]) parts.push(key + '=' + encodeURIComponent(base[key])); }
+    return '/workspace' + (parts.length ? '?' + parts.join('&') : '');
+  }
+  var here = qs({});
+%>
+
+<div class="ws-head">
+  <div>
+    <h1>Work queue</h1>
+    <p class="ws-count"><span class="ws-num"><%= it.rows.length %></span> open item<%= it.rows.length === 1 ? '' : 's' %> across every client, hardest-first.</p>
+  </div>
+  <div class="action-row">
+    <a class="btn btn-ghost btn-sm" href="/workspace/anomalies">Anomalies</a>
+    <a class="btn btn-ghost btn-sm" href="/workspace/precedents">Firm memory</a>
+    <a class="btn btn-ghost btn-sm" href="/workspace/capacity">Capacity</a>
+  </div>
+</div>
+
+<% if (it.risk.length > 0) { %>
+<section class="ws-strip">
+  <h2><span class="ws-num"><%= it.risk.length %></span> client<%= it.risk.length === 1 ? '' : 's' %> at risk of missing the 10th</h2>
+  <ul class="ws-strip-list">
+    <% it.risk.forEach(function (r) { %>
+      <li>
+        <a class="link" href="/workspace/close/<%= r.clientId %>"><%= r.clientName %></a>
+        <span class="ws-risk-<%= r.verdict.level %>"><%= r.verdict.level === 'missed' ? 'missed' : r.verdict.daysToTarget + 'd' %></span>
+        <span class="why"><%= r.verdict.reason %></span>
+      </li>
+    <% }) %>
+  </ul>
+</section>
+<% } else { %>
+<section class="ws-strip calm">
+  <h2>No client is at risk of missing the 10th</h2>
+  <p class="ws-why">Every open close period is either delivered or comfortably ahead of its target date.</p>
+</section>
+<% } %>
+
+<div class="ws-filters">
+  <a class="ws-chip<%= it.filters.kind || it.filters.assigned || it.filters.clientId ? '' : ' active' %>" href="/workspace">All <span class="n"><%= it.facets.total %></span></a>
+  <a class="ws-chip<%= it.filters.assigned === 'me' ? ' active' : '' %>" href="<%= qs({ assigned: it.filters.assigned === 'me' ? null : 'me' }) %>">Mine <span class="n"><%= it.facets.mine %></span></a>
+  <a class="ws-chip<%= it.filters.assigned === 'unassigned' ? ' active' : '' %>" href="<%= qs({ assigned: it.filters.assigned === 'unassigned' ? null : 'unassigned' }) %>">Unassigned <span class="n"><%= it.facets.unassigned %></span></a>
+  <% it.kinds.forEach(function (k) { %>
+    <a class="ws-chip<%= it.filters.kind === k ? ' active' : '' %>" href="<%= qs({ kind: it.filters.kind === k ? null : k }) %>"><%= k %> <span class="n"><%= it.facets.byKind[k] || 0 %></span></a>
+  <% }) %>
+  <form method="get" action="/workspace" class="inline">
+    <% if (it.filters.kind) { %><input type="hidden" name="kind" value="<%= it.filters.kind %>"><% } %>
+    <% if (it.filters.assigned) { %><input type="hidden" name="assigned" value="<%= it.filters.assigned %>"><% } %>
+    <label class="visually-hidden" for="client-filter">Filter by client</label>
+    <select id="client-filter" name="client" data-ws-autosubmit>
+      <option value="">Every client</option>
+      <% it.clientRows.forEach(function (c) { %>
+        <option value="<%= c.id %>"<%= it.filters.clientId === c.id ? ' selected' : '' %>><%= c.businessName %></option>
+      <% }) %>
+    </select>
+    <noscript><button class="ws-mini" type="submit">Go</button></noscript>
+  </form>
+</div>
+
+<% if (it.rows.length === 0) { %>
+  <section class="card"><p class="empty">Nothing open here. Clear the filters, or enjoy it.</p></section>
+<% } else { %>
+<ul class="ws-queue" id="ws-queue" data-ws-list="queue">
+  <% it.rows.forEach(function (row, i) { %>
+    <li>
+      <% if (row.newGroup) { %>
+        <div class="ws-client-head">
+          <a href="/workspace/client/<%= row.clientId %>"><%= row.clientName %></a>
+        </div>
+      <% } %>
+      <div class="ws-row risk-<%= row.score.slaBand %>"
+           tabindex="0"
+           data-ws-item
+           data-index="<%= i %>"
+           data-href="<%= row.href %>"
+           data-label="<%= row.title %>, <%= row.kind %>, <%= row.clientName %>, <%= row.score.slaLabel %>, priority <%= row.score.priority %>">
+        <span class="ws-prio" title="SLA <%= row.score.sla %> + close <%= row.score.close %> + blocked <%= row.score.blocked %> + age <%= row.score.age %> + volume <%= row.score.volume %> + kind <%= row.score.kind %>"><%= row.score.priority %></span>
+        <span class="ws-main">
+          <a class="ws-title" href="<%= row.href %>"><%= row.title %></a>
+          <span class="ws-meta">
+            <span class="ws-kind kind-<%= row.kind %>"><%= row.kind %></span>
+            <span><%= row.clientName %></span>
+            <% if (row.itemCount > 1) { %><span class="sep"><span class="ws-num"><%= row.itemCount %></span> items</span><% } %>
+            <% if (row.status === 'blocked') { %><span class="sep ws-risk-missed">blocked</span><% } %>
+            <% if (row.assignedTo) { %><span class="sep"><%= row.assigneeName || 'assigned' %></span><% } else { %><span class="sep">unassigned</span><% } %>
+            <% if (row.detail) { %><span class="sep"><%= row.detail %></span><% } %>
+          </span>
+        </span>
+        <span class="ws-sla sla-<%= row.score.slaBand %>"><%= row.score.slaLabel %></span>
+        <span class="ws-row-actions">
+          <% if (row.assignedTo !== it.me.id) { %>
+          <form method="post" action="/workspace/items/<%= row.id %>/assign" data-ws-action="assign">
+            <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+            <input type="hidden" name="return_to" value="<%= here %>">
+            <button class="ws-mini" type="submit" title="Assign to me (a)">a · mine</button>
+          </form>
+          <% } %>
+          <form method="post" action="/workspace/items/<%= row.id %>/snooze" data-ws-action="snooze">
+            <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+            <input type="hidden" name="days" value="1">
+            <input type="hidden" name="return_to" value="<%= here %>">
+            <button class="ws-mini" type="submit" title="Snooze one day (s)">s · snooze</button>
+          </form>
+        </span>
+      </div>
+    </li>
+  <% }) %>
+</ul>
+<p class="ws-keyhint"><kbd>j</kbd>/<kbd>k</kbd> move · <kbd>enter</kbd> open · <kbd>a</kbd> assign to me · <kbd>s</kbd> snooze · <kbd>?</kbd> help</p>
+<% } %>
+
+<div class="ws-live" role="status" aria-live="polite" aria-atomic="true" id="ws-live"></div>
+
+<section class="ws-help" id="ws-help" hidden aria-label="Keyboard shortcuts">
+  <h2>Keyboard</h2>
+  <dl>
+    <dt><kbd>j</kbd>/<kbd>k</kbd></dt><dd>Next / previous item</dd>
+    <dt><kbd>enter</kbd></dt><dd>Open the focused item</dd>
+    <dt><kbd>a</kbd></dt><dd>Assign to me</dd>
+    <dt><kbd>s</kbd></dt><dd>Snooze one day</dd>
+    <dt><kbd>g</kbd></dt><dd>Jump to the top</dd>
+    <dt><kbd>?</kbd></dt><dd>Show / hide this</dd>
+    <dt><kbd>esc</kbd></dt><dd>Close this</dd>
+  </dl>
+</section>
+
+<script src="/assets/workspace.js" defer></script>

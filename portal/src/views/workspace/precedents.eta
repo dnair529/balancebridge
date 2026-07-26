@@ -1,0 +1,105 @@
+<% layout('../layout') %>
+<div class="ws-head">
+  <div>
+    <p><a class="link" href="/workspace">← Work queue</a></p>
+    <h1>Firm memory</h1>
+    <p class="ws-count"><span class="ws-num"><%= it.total %></span> recorded treatment<%= it.total === 1 ? '' : 's' %>. How we handled it last time, so it survives turnover.</p>
+  </div>
+</div>
+
+<section class="card">
+  <form method="get" action="/workspace/precedents" class="ws-filters" style="margin: 0;">
+    <label class="visually-hidden" for="q">Search firm memory</label>
+    <input id="q" type="search" name="q" value="<%= it.q %>" placeholder="How did we handle retainage for Ramirez last year?" style="flex: 1; min-width: 18rem; font: 400 0.9rem var(--font-sans); border: 1px solid rgba(11,31,51,0.18); border-radius: 10px; padding: 0.45rem 0.7rem;">
+    <label class="visually-hidden" for="pclient">Scope to a client</label>
+    <select id="pclient" name="client">
+      <option value="">Whole firm (literal match)</option>
+      <% it.clientRows.forEach(function (c) { %>
+        <option value="<%= c.id %>"<%= it.clientId === c.id ? ' selected' : '' %>><%= c.businessName %></option>
+      <% }) %>
+    </select>
+    <button class="btn btn-primary btn-sm" type="submit">Search</button>
+  </form>
+  <p class="ws-keyhint">
+    Pick a client to run the ranked search — it sees that client’s precedents plus the firm playbook, and nothing from
+    any other engagement. Left on “whole firm”, the search is a literal match run locally: firm memory spanning every
+    client is never handed to a provider as one payload.
+  </p>
+</section>
+
+<% if (it.aiMeta) { %>
+<section class="card">
+  <div class="ws-ai<%= it.aiMeta.confidence < 75 ? ' low' : '' %>">
+    <div class="ws-ai-head">
+      <span class="ws-ai-answer"><%= it.matches.length %> match<%= it.matches.length === 1 ? '' : 'es' %> for “<%= it.q %>”</span>
+      <span class="ws-src"><%= it.aiMeta.provider %></span>
+      <span class="ws-conf" title="Confidence <%= it.aiMeta.confidence %> of 100">
+        <span class="ws-conf-bar<%= it.aiMeta.confidence < 75 ? ' low' : '' %>"><i style="width: <%= it.aiMeta.confidence %>%"></i></span>
+        <%= it.aiMeta.confidence %>%
+      </span>
+    </div>
+    <p class="ws-why"><%= it.aiMeta.reasoning %></p>
+  </div>
+</section>
+<% } %>
+
+<% if (it.q) { %>
+  <% if (it.matches.length === 0) { %>
+    <section class="card"><p class="empty">Nothing in firm memory overlaps that question. Better than a misleading precedent.</p></section>
+  <% } else { %>
+    <% it.matches.forEach(function (m) { %>
+      <section class="card">
+        <div class="ws-group-head">
+          <span class="ws-group-title"><%= m.title %></span>
+          <span class="ws-conf" title="Relevance <%= m.score %> of 100">
+            <span class="ws-conf-bar<%= m.score < 75 ? ' low' : '' %>"><i style="width: <%= m.score %>%"></i></span>
+            <%= m.score %>%
+            <span class="ws-src"><%= m.scope %></span>
+          </span>
+        </div>
+        <p class="ws-why"><span class="ws-src">why</span> <%= m.why %></p>
+        <p><%= m.body %></p>
+      </section>
+    <% }) %>
+  <% } %>
+<% } else { %>
+  <section class="card">
+    <div class="card-head"><h2>Recently recorded</h2></div>
+    <% if (it.recent.length === 0) { %>
+      <p class="empty">Firm memory is empty. Record the first treatment below.</p>
+    <% } else { %>
+      <ul class="list">
+        <% it.recent.forEach(function (p) { %>
+          <li class="list-row">
+            <span class="ws-src"><%= p.clientId ? 'client' : 'firm' %></span>
+            <span class="strong"><%= p.title %></span>
+            <% if (p.industry) { %><span class="chip"><%= p.industry %></span><% } %>
+            <span class="muted small"><%= it.fmtDate(p.createdAt) %></span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+<% } %>
+
+<section class="card">
+  <div class="card-head"><h2>Record a precedent</h2></div>
+  <form method="post" action="/workspace/precedents" class="stack">
+    <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+    <div class="field-grid">
+      <label class="field"><span>Title *</span><input type="text" name="title" required placeholder="Retainage on construction progress billing"></label>
+      <label class="field"><span>Client</span>
+        <select name="client_id">
+          <option value="">Firm-wide playbook</option>
+          <% it.clientRows.forEach(function (c) { %>
+            <option value="<%= c.id %>"><%= c.businessName %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label class="field"><span>Industry</span><input type="text" name="industry" placeholder="construction"></label>
+      <label class="field"><span>Tags</span><input type="text" name="tags" placeholder="retainage, wip, progress billing"></label>
+    </div>
+    <label class="field"><span>The treatment *</span><textarea name="body" rows="4" required data-autosize placeholder="What we did, why, and what we would do differently."></textarea></label>
+    <button class="btn btn-primary" type="submit">Record it</button>
+  </form>
+</section>

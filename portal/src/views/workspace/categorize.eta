@@ -1,0 +1,135 @@
+<% layout('../layout') %>
+<%
+  var bands = [
+    {
+      id: 'confident',
+      title: 'Ready to clear',
+      blurb: 'Above the confidence threshold. Spot-check the reasoning, then approve the whole group in one keystroke.',
+      groups: it.confident
+    },
+    {
+      id: 'review',
+      title: 'Needs you',
+      blurb: 'Below the threshold, or no category the suggestion would stand behind. Surfaced separately so nothing gets rubber-stamped alongside the easy ones.',
+      groups: it.needsReview
+    }
+  ];
+  var cats = it.categories;
+%>
+
+<div class="ws-head">
+  <div>
+    <p><a class="link" href="/workspace">← Work queue</a> · <a class="link" href="/workspace/client/<%= it.client.id %>">Client brief</a></p>
+    <h1>Categorize — <%= it.client.businessName %></h1>
+    <p class="ws-count">
+      <span class="ws-num"><%= it.totalUncategorized %></span> uncategorized transaction<%= it.totalUncategorized === 1 ? '' : 's' %>
+      in <span class="ws-num"><%= it.groupedCount %></span> vendor group<%= it.groupedCount === 1 ? '' : 's' %> ·
+      <span class="ws-num"><%= it.learnedRuleCount %></span> learned rule<%= it.learnedRuleCount === 1 ? '' : 's' %> already working for this client
+    </p>
+  </div>
+  <div class="action-row">
+    <a class="btn btn-ghost btn-sm" href="/workspace/close/<%= it.client.id %>">Close</a>
+  </div>
+</div>
+
+<% if (it.totalUncategorized === 0) { %>
+  <section class="card"><p class="empty">Nothing uncategorized. Every transaction on this client carries a category.</p></section>
+<% } %>
+
+<div data-ws-list="categorize">
+<% bands.forEach(function (band) { %>
+  <% if (band.groups.length > 0) { %>
+  <div class="ws-band">
+    <h2><%= band.title %> <span class="ws-num muted">(<%= band.groups.length %>)</span></h2>
+    <p><%= band.blurb %></p>
+  </div>
+
+  <% band.groups.forEach(function (g) { %>
+    <% var gid = 'cat-' + band.id + '-' + g.key.replace(/[^A-Za-z0-9]+/g, '-').toLowerCase(); %>
+    <form class="ws-group" method="post" action="/workspace/categorize/<%= it.client.id %>/apply"
+          data-ws-item
+          data-label="<%= g.count %> transactions from <%= g.label %>, suggestion <%= g.suggestedCategoryName || 'none' %>, confidence <%= g.confidence %>">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <input type="hidden" name="group_key" value="<%= g.key %>">
+      <input type="hidden" name="counterparty" value="<%= g.label %>">
+
+      <div class="ws-group-head">
+        <span class="ws-group-title"><span class="n"><%= g.count %></span> transaction<%= g.count === 1 ? '' : 's' %> from <%= g.label %></span>
+        <span class="ws-group-sum"><%= it.fmtMoney(g.totalCents) %> · <%= it.fmtDate(g.firstPostedAt) %> – <%= it.fmtDate(g.lastPostedAt) %></span>
+      </div>
+
+      <div class="ws-ai<%= g.needsHuman ? ' low' : '' %>">
+        <div class="ws-ai-head">
+          <span class="ws-ai-answer"><%= g.suggestedCategoryName || 'No category confident enough to propose' %></span>
+          <span class="ws-src"><%= g.source === 'rule' ? 'rule' : 'model' %></span>
+          <span class="ws-conf" title="Confidence <%= g.confidence %> of 100">
+            <span class="ws-conf-bar<%= g.needsHuman ? ' low' : '' %>"><i style="width: <%= g.confidence %>%"></i></span>
+            <%= g.confidence %>%
+          </span>
+        </div>
+        <p class="ws-why"><%= g.reasoning %></p>
+        <% if (g.suggestedQuestion) { %>
+          <p class="ws-question"><strong>Worth asking the client:</strong> <%= g.suggestedQuestion %></p>
+        <% } %>
+      </div>
+
+      <div class="ws-group-actions">
+        <label class="visually-hidden" for="<%= gid %>">Category for <%= g.label %></label>
+        <select id="<%= gid %>" name="category_id" data-ws-category>
+          <option value="">Pick a category…</option>
+          <% cats.forEach(function (c, ci) { %>
+            <option value="<%= c.id %>"<%= g.suggestedCategoryId === c.id ? ' selected' : '' %>><%= ci < 9 ? (ci + 1) + ' · ' : '' %><%= c.name %><%= c.clientId ? '' : ' (firm default)' %></option>
+          <% }) %>
+        </select>
+        <% if (g.suggestedCategoryId) { %>
+          <button class="btn btn-primary btn-sm" type="submit" name="accept" value="1" data-ws-approve>
+            Approve all <%= g.count %>
+          </button>
+        <% } %>
+        <button class="ws-mini" type="submit" name="accept" value="0" data-ws-apply>Apply my pick</button>
+        <label class="ws-cat-keys inline-field">
+          <input type="checkbox" name="learn" value="1" checked>
+          <span>Learn the rule</span>
+        </label>
+        <button class="ws-mini" type="button" data-ws-skip>x · skip</button>
+      </div>
+
+      <details class="ws-txns">
+        <summary>Show the <%= g.count %> transaction<%= g.count === 1 ? '' : 's' %></summary>
+        <table>
+          <tbody>
+          <% g.transactions.slice(0, 60).forEach(function (t) { %>
+            <tr>
+              <td class="muted"><%= it.fmtDate(t.postedAt) %></td>
+              <td><%= t.description %></td>
+              <td class="num"><%= it.fmtMoney(t.amountCents) %></td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+        <% if (g.count > 60) { %><p class="muted small">…and <%= g.count - 60 %> more in this group.</p><% } %>
+      </details>
+    </form>
+  <% }) %>
+  <% } %>
+<% }) %>
+</div>
+
+<% if (it.totalUncategorized > 0) { %>
+<p class="ws-keyhint"><kbd>j</kbd>/<kbd>k</kbd> move · <kbd>enter</kbd> approve the suggestion · <kbd>1</kbd>–<kbd>9</kbd> pick a category · <kbd>x</kbd> skip · <kbd>?</kbd> help</p>
+<% } %>
+
+<div class="ws-live" role="status" aria-live="polite" aria-atomic="true" id="ws-live"></div>
+
+<section class="ws-help" id="ws-help" hidden aria-label="Keyboard shortcuts">
+  <h2>Keyboard</h2>
+  <dl>
+    <dt><kbd>j</kbd>/<kbd>k</kbd></dt><dd>Next / previous group</dd>
+    <dt><kbd>enter</kbd></dt><dd>Approve the suggestion for the whole group</dd>
+    <dt><kbd>1</kbd>–<kbd>9</kbd></dt><dd>Pick that category instead</dd>
+    <dt><kbd>x</kbd></dt><dd>Skip this group</dd>
+    <dt><kbd>?</kbd></dt><dd>Show / hide this</dd>
+  </dl>
+</section>
+
+<script src="/assets/workspace.js" defer></script>

@@ -21,6 +21,8 @@ import { adminRoutes } from './routes/admin.js';
 import { leadRoutes } from './routes/leads.js';
 import { webhookRoutes } from './routes/webhooks.js';
 import { intakeRoutes } from './routes/intake.js';
+import { workspaceRoutes } from './routes/workspace.js';
+import { clientRoutes } from './routes/client.js';
 
 async function build() {
   const app = Fastify({
@@ -110,6 +112,7 @@ async function build() {
   // ---------- Routes ----------
   await app.register(authRoutes);
   await app.register(dashboardRoutes);
+  await app.register(clientRoutes);
   await app.register(documentRoutes);
   await app.register(messageRoutes);
   await app.register(taskRoutes);
@@ -117,6 +120,7 @@ async function build() {
   await app.register(signatureRoutes);
   await app.register(settingsRoutes);
   await app.register(adminRoutes);
+  await app.register(workspaceRoutes);
   await app.register(leadRoutes);
   await app.register(webhookRoutes); // own scope: raw-body parser inside
   await app.register(intakeRoutes); // omnichannel intake; webhooks in a child scope

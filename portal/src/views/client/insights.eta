@@ -1,0 +1,129 @@
+<% layout('../layout') %>
+<%
+  const q = it.user.role === 'client' ? '' : (it.query.client ? '?client=' + it.query.client : '');
+  /* Belt and braces. The route already requires narrative_approved_at IS NOT
+     NULL in SQL; this template refuses to render a narrative without it too, so
+     neither layer alone can leak a draft. */
+  const close = (it.close && it.close.narrative && it.close.narrativeApprovedAt) ? it.close : null;
+%>
+
+<div class="m-page">
+  <div class="page-head">
+    <h1>Your books</h1>
+    <p class="sub">What we found, what we're watching, and what's coming up.</p>
+  </div>
+
+  <!-- ---------------------------------------------------------------- -->
+  <!-- Close summary — approved only. Never a draft.                     -->
+  <!-- ---------------------------------------------------------------- -->
+  <% if (close) { %>
+    <section class="m-narrative">
+      <div class="m-narrative-head">
+        <h2>Your <%= it.fmtDate(close.periodEnd) %> close</h2>
+        <span class="chip chip-you">Reviewed &amp; approved</span>
+      </div>
+      <p class="m-narrative-body"><%= close.narrative %></p>
+      <p class="muted small">
+        Approved by your bookkeeper on <%= it.fmtDate(close.narrativeApprovedAt) %>.
+        Every close summary is written with AI assistance and read by a human before you see it.
+      </p>
+    </section>
+  <% } else { %>
+    <section class="m-card">
+      <div class="m-card-head"><h2>Close summary</h2></div>
+      <p class="empty">Your next close summary lands here once your bookkeeper has reviewed and approved it. We never publish a draft.</p>
+    </section>
+  <% } %>
+
+  <!-- ---------------------------------------------------------------- -->
+  <!-- Anomalies — shared only                                           -->
+  <!-- ---------------------------------------------------------------- -->
+  <section class="m-card">
+    <div class="m-card-head"><h2>Things worth a look</h2></div>
+    <% if (it.anomalies.length === 0) { %>
+      <p class="empty">Nothing unusual to flag. We check every month for duplicate payments, price hikes and charges that don't fit the pattern.</p>
+    <% } else { %>
+      <ul class="m-anomalies">
+        <% it.anomalies.forEach(function (a) { %>
+          <li class="m-anomaly sev-<%= a.severity %>">
+            <div class="m-anomaly-head">
+              <span class="m-anomaly-kind"><%= a.kindLabel %></span>
+              <span class="chip sev-chip-<%= a.severity %>"><%= a.severity %></span>
+            </div>
+            <p class="m-anomaly-summary"><%= a.summary %></p>
+            <p class="muted small">Shared <%= it.fmtDate(a.sharedWithClientAt || a.createdAt) %></p>
+          </li>
+        <% }) %>
+      </ul>
+      <p class="muted small">Spotted something that doesn't look right? <a class="link" href="/messages<%= q %>">Message us</a> and we'll dig in.</p>
+    <% } %>
+  </section>
+
+  <!-- ---------------------------------------------------------------- -->
+  <!-- Books health — the 20-point checklist, live                       -->
+  <!-- ---------------------------------------------------------------- -->
+  <section class="m-health">
+    <div class="m-health-head">
+      <div>
+        <h2>Books health</h2>
+        <p class="muted small">Updated <%= it.fmtDateTime(it.health.computedAt) %></p>
+      </div>
+      <div class="m-health-score band-<%= it.health.band.code %>">
+        <span class="m-health-num tabular"><%= it.health.score %></span>
+        <span class="m-health-max">/ <%= it.health.maxScore %></span>
+      </div>
+    </div>
+
+    <progress class="m-progress band-<%= it.health.band.code %>" value="<%= it.health.score %>" max="<%= it.health.maxScore %>"></progress>
+    <p class="m-health-band"><strong><%= it.health.band.label %></strong> — <%= it.health.band.blurb %></p>
+
+    <% it.healthGroups.forEach(function (g) { %>
+      <div class="m-health-group">
+        <h3><%= g.group %>
+          <span class="muted small"><%= g.checks.filter(function (c) { return c.passed; }).length %> of <%= g.checks.length %></span>
+        </h3>
+        <ul class="m-checks">
+          <% g.checks.forEach(function (c) { %>
+            <li class="m-check <%= c.passed ? 'is-pass' : 'is-fail' %>">
+              <span class="m-check-box" aria-hidden="true">
+                <% if (c.passed) { %>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l5 5L19 7"/></svg>
+                <% } %>
+              </span>
+              <span class="m-check-body">
+                <span class="m-check-label"><%= c.label %></span>
+                <span class="m-check-detail"><%= c.detail %></span>
+              </span>
+            </li>
+          <% }) %>
+        </ul>
+      </div>
+    <% }) %>
+  </section>
+
+  <!-- ---------------------------------------------------------------- -->
+  <!-- Compliance calendar — informational, not tax advice               -->
+  <!-- ---------------------------------------------------------------- -->
+  <section class="m-card">
+    <div class="m-card-head"><h2>What's coming up</h2></div>
+    <% if (it.calendar.length === 0) { %>
+      <p class="empty">No deadlines on your calendar yet.</p>
+    <% } else { %>
+      <ul class="m-calendar">
+        <% it.calendar.forEach(function (e) { %>
+          <li class="m-event <%= e.overdue ? 'is-overdue' : (e.daysAway <= 14 ? 'is-soon' : '') %>">
+            <div class="m-event-when">
+              <span class="m-event-count"><%= e.countdown %></span>
+              <span class="m-event-date muted small"><%= it.fmtDate(e.dueOn) %></span>
+            </div>
+            <div class="m-event-body">
+              <p class="m-event-label"><%= e.label %></p>
+              <% if (e.notes) { %><p class="m-event-notes muted small"><%= e.notes %></p><% } %>
+            </div>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+    <p class="m-disclaimer"><%= it.complianceNotice %></p>
+  </section>
+</div>

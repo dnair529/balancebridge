@@ -1,0 +1,70 @@
+<% layout('../layout') %>
+<% function hours(min) { return (Math.round(min / 6) / 10).toFixed(1); } %>
+
+<div class="ws-head">
+  <div>
+    <p><a class="link" href="/workspace">← Work queue</a></p>
+    <h1>Capacity</h1>
+    <p class="ws-count">Actual effort against fee, last <span class="ws-num"><%= it.days %></span> days. Most small firms genuinely do not know who they are losing money on.</p>
+  </div>
+  <div class="ws-filters" style="margin: 0;">
+    <a class="ws-chip<%= it.days === 30 ? ' active' : '' %>" href="/workspace/capacity?days=30">30d</a>
+    <a class="ws-chip<%= it.days === 90 ? ' active' : '' %>" href="/workspace/capacity?days=90">90d</a>
+    <a class="ws-chip<%= it.days === 365 ? ' active' : '' %>" href="/workspace/capacity?days=365">1y</a>
+  </div>
+</div>
+
+<div class="ws-facts">
+  <span class="ws-fact"><span class="v"><%= hours(it.totalMinutes) %>h</span><span class="k">total effort</span></span>
+  <span class="ws-fact"><span class="v"><%= it.fmtMoney(it.totalFeeCents) %></span><span class="k">invoiced</span></span>
+  <span class="ws-fact"><span class="v"><%= it.flagged.length %></span><span class="k">clients above the bar</span></span>
+  <span class="ws-fact"><span class="v"><%= it.rows.length %></span><span class="k">engagements</span></span>
+</div>
+
+<% if (it.flagged.length > 0) { %>
+<section class="ws-strip">
+  <h2><span class="ws-num"><%= it.flagged.length %></span> client<%= it.flagged.length === 1 ? '' : 's' %> trending well above similar engagements</h2>
+  <ul class="ws-strip-list">
+    <% it.flagged.forEach(function (r) { %>
+      <li><a class="link" href="/workspace/client/<%= r.clientId %>"><%= r.businessName %></a> <span class="why"><%= r.note %></span></li>
+    <% }) %>
+  </ul>
+</section>
+<% } %>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Effort vs fee</h2>
+    <span class="muted small">Ranked against the median engagement · flagged at <%= 1.75 %>×</span>
+  </div>
+  <% if (it.rows.length === 0) { %>
+    <p class="empty">No clients yet.</p>
+  <% } else { %>
+  <table class="ws-table">
+    <thead>
+      <tr>
+        <th>Client</th>
+        <th class="num">Effort</th>
+        <th class="num">Invoiced</th>
+        <th class="num">Min / $100</th>
+        <th class="num">vs median</th>
+        <th class="num">Open items</th>
+        <th>Read</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% it.rows.forEach(function (r) { %>
+        <tr class="<%= r.flagged ? 'flagged' : '' %>">
+          <td class="strong"><a class="link" href="/workspace/client/<%= r.clientId %>"><%= r.businessName %></a></td>
+          <td class="num"><%= hours(r.minutes) %>h</td>
+          <td class="num"><%= it.fmtMoney(r.invoicedCents) %></td>
+          <td class="num"><%= r.minutesPer100 === null ? '—' : r.minutesPer100.toFixed(1) %></td>
+          <td class="num"><%= r.ratioToMedian === null ? '—' : r.ratioToMedian.toFixed(2) + '×' %></td>
+          <td class="num"><%= r.openItems %></td>
+          <td class="muted small"><%= r.note %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</section>

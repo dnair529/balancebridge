@@ -1,0 +1,62 @@
+{
+  "name": "Balance Bridge Portal",
+  "short_name": "Balance Bridge",
+  "description": "Snap a receipt, answer a question, and always know where you stand. Works with no signal — captures queue up and send themselves.",
+  "id": "/m",
+  "start_url": "/m",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "theme_color": "#0B1F33",
+  "background_color": "#0B1F33",
+  "lang": "en-US",
+  "dir": "ltr",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    {
+      "src": "/assets/pwa/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/pwa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/pwa/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/pwa/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Snap a receipt",
+      "short_name": "Snap",
+      "description": "Photograph a receipt and file it",
+      "url": "/m"
+    },
+    {
+      "name": "What we need",
+      "short_name": "Needs",
+      "description": "Everything still outstanding, in one list",
+      "url": "/needs"
+    },
+    {
+      "name": "Questions",
+      "short_name": "Questions",
+      "description": "Answer open questions with one tap",
+      "url": "/questions"
+    }
+  ]
+}

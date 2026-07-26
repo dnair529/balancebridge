@@ -1,0 +1,67 @@
+<% layout('../layout') %>
+<%
+  var statuses = ['open', 'confirmed', 'shared', 'dismissed'];
+  var actions = ['confirm', 'dismiss', 'share'];
+%>
+
+<div class="ws-head">
+  <div>
+    <p><a class="link" href="/workspace">← Work queue</a></p>
+    <h1>Anomalies</h1>
+    <p class="ws-count">Surfaced to staff before the client sees them — so the firm reports the problem rather than being asked about it.</p>
+  </div>
+</div>
+
+<div class="ws-filters">
+  <% statuses.forEach(function (s) { %>
+    <a class="ws-chip<%= it.status === s ? ' active' : '' %>" href="/workspace/anomalies?status=<%= s %>"><%= s %> <span class="n"><%= it.byStatus[s] || 0 %></span></a>
+  <% }) %>
+</div>
+
+<% if (it.rows.length === 0) { %>
+  <section class="card"><p class="empty">Nothing <%= it.status %>.</p></section>
+<% } else { %>
+<section class="card">
+  <table class="ws-table">
+    <thead>
+      <tr><th>Client</th><th>What</th><th>Severity</th><th>Found</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% it.rows.forEach(function (r) { %>
+        <tr>
+          <td class="strong"><a class="link" href="/workspace/client/<%= r.anomaly.clientId %>"><%= r.clientName %></a></td>
+          <td>
+            <span class="strong"><%= r.anomaly.summary %></span>
+            <span class="ws-kind kind-<%= r.anomaly.severity === 'high' ? 'quarantine' : 'reconcile' %>"><%= r.anomaly.kind.replace(/_/g, ' ') %></span>
+            <% if (r.anomaly.detail && r.anomaly.detail.detail) { %>
+              <p class="ws-why"><%= r.anomaly.detail.detail %></p>
+            <% } %>
+            <% if (r.anomaly.detail && r.anomaly.detail.reasoning) { %>
+              <p class="ws-why"><span class="ws-src">why</span> <%= r.anomaly.detail.reasoning %></p>
+            <% } %>
+            <% if (r.anomaly.detail && r.anomaly.detail.confidence) { %>
+              <span class="ws-conf" title="Confidence <%= r.anomaly.detail.confidence %> of 100">
+                <span class="ws-conf-bar<%= r.anomaly.detail.confidence < 75 ? ' low' : '' %>"><i style="width: <%= r.anomaly.detail.confidence %>%"></i></span>
+                <%= r.anomaly.detail.confidence %>%
+              </span>
+            <% } %>
+            <span class="ws-src"><%= r.anomaly.detectedBy %></span>
+          </td>
+          <td><span class="chip sev-<%= r.anomaly.severity %>"><%= r.anomaly.severity %></span></td>
+          <td class="muted small"><%= it.fmtDate(r.anomaly.createdAt) %><% if (r.resolverName) { %><br>by <%= r.resolverName %><% } %></td>
+          <td class="row-actions">
+            <% actions.forEach(function (a) { %>
+              <form method="post" action="/workspace/anomalies/<%= r.anomaly.id %>">
+                <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+                <input type="hidden" name="action" value="<%= a %>">
+                <input type="hidden" name="return_to" value="/workspace/anomalies?status=<%= it.status %>">
+                <button class="ws-mini" type="submit"><%= a === 'share' ? 'share with client' : a %></button>
+              </form>
+            <% }) %>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+<% } %>

@@ -1,0 +1,709 @@
+/* ------------------------------------------------------------------
+   Balance Bridge — staff workspace.
+   Layered on portal.css; same tokens (navy #0B1F33, ink #071522,
+   emerald #10B981, mist #EEF2F6). Dense but calm: tighter rows, more
+   information per screen, no new colours and no new shapes.
+------------------------------------------------------------------- */
+
+/* Money and counts always align. Non-negotiable on a page of numbers. */
+.ws-num,
+.ws-queue .ws-meta,
+.ws-table td.num {
+  font-variant-numeric: tabular-nums;
+}
+.ws-table td.num,
+.ws-table th.num {
+  text-align: right;
+}
+
+/* ---------- Page head with a live count ---------- */
+.ws-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.ws-head h1 {
+  margin-bottom: 0.1rem;
+}
+.ws-count {
+  color: var(--steel);
+  font-size: 0.9rem;
+}
+
+/* ---------- Risk strip: "N clients at risk of missing the 10th" ---------- */
+.ws-strip {
+  border: 1px solid rgba(220, 38, 38, 0.28);
+  background: rgba(220, 38, 38, 0.05);
+  border-radius: var(--radius);
+  padding: 0.85rem 1.1rem;
+  margin-bottom: 1.1rem;
+}
+.ws-strip.calm {
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.06);
+}
+.ws-strip h2 {
+  font-size: 1rem;
+  margin: 0 0 0.35rem;
+}
+.ws-strip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ws-strip-list li {
+  font-size: 0.86rem;
+  color: var(--navy);
+}
+.ws-strip-list .why {
+  color: var(--steel);
+}
+.ws-risk-missed {
+  color: var(--danger);
+  font-weight: 600;
+}
+.ws-risk-critical {
+  color: #b45309;
+  font-weight: 600;
+}
+.ws-risk-warning {
+  color: var(--steel);
+  font-weight: 600;
+}
+
+/* ---------- Filters ---------- */
+.ws-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.9rem;
+}
+.ws-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(11, 31, 51, 0.16);
+  background: #fff;
+  color: var(--steel);
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.ws-chip:hover {
+  border-color: rgba(11, 31, 51, 0.4);
+  color: var(--navy);
+}
+.ws-chip.active {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}
+.ws-chip .n {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+.ws-filters select {
+  font: 400 0.82rem var(--font-sans);
+  border: 1px solid rgba(11, 31, 51, 0.16);
+  border-radius: 999px;
+  padding: 0.26rem 0.6rem;
+  background: #fff;
+  color: var(--navy);
+}
+
+/* ---------- The queue ---------- */
+.ws-queue {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  border: 1px solid rgba(11, 31, 51, 0.08);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.ws-client-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.5rem 1rem 0.3rem;
+  background: var(--mist);
+  border-top: 1px solid rgba(11, 31, 51, 0.06);
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--navy);
+}
+.ws-queue > li:first-child .ws-client-head {
+  border-top: none;
+}
+.ws-client-head a {
+  color: inherit;
+  text-decoration: none;
+}
+.ws-client-head a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ws-row {
+  display: grid;
+  grid-template-columns: 3.2rem minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 1rem;
+  border-top: 1px solid var(--mist);
+  cursor: pointer;
+}
+.ws-row:first-child {
+  border-top: none;
+}
+.ws-row:hover {
+  background: rgba(238, 242, 246, 0.6);
+}
+/* The focus ring has to be unmistakable — this list is driven by j/k. */
+.ws-row.is-focused,
+.ws-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: rgba(16, 185, 129, 0.07);
+}
+.ws-row.is-focused .ws-title {
+  color: var(--ink);
+}
+
+.ws-prio {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--navy);
+  text-align: center;
+  background: var(--mist);
+  border-radius: 8px;
+  padding: 0.15rem 0;
+}
+.ws-row.risk-overdue .ws-prio {
+  background: rgba(220, 38, 38, 0.12);
+  color: var(--danger);
+}
+.ws-row.risk-today .ws-prio {
+  background: rgba(180, 83, 9, 0.12);
+  color: #b45309;
+}
+
+.ws-main {
+  min-width: 0;
+}
+.ws-title {
+  font-weight: 600;
+  font-size: 0.93rem;
+  color: var(--navy);
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ws-meta {
+  font-size: 0.79rem;
+  color: var(--steel);
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.ws-meta .sep::before {
+  content: '·';
+  margin-right: 0.5rem;
+}
+
+.ws-kind {
+  display: inline-block;
+  font-size: 0.67rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.1rem 0.45rem;
+  border-radius: 5px;
+  background: var(--mist);
+  color: var(--steel);
+}
+.kind-categorize {
+  background: rgba(16, 185, 129, 0.14);
+  color: var(--accent-600);
+}
+.kind-reconcile {
+  background: rgba(11, 31, 51, 0.1);
+  color: var(--navy);
+}
+.kind-close {
+  background: rgba(180, 83, 9, 0.13);
+  color: #b45309;
+}
+.kind-answer,
+.kind-chase {
+  background: rgba(82, 97, 117, 0.14);
+  color: var(--steel);
+}
+.kind-quarantine {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--danger);
+}
+
+.ws-sla {
+  font-size: 0.79rem;
+  color: var(--steel);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.sla-overdue {
+  color: var(--danger);
+  font-weight: 600;
+}
+.sla-today {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.ws-row-actions {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+.ws-row-actions form {
+  display: inline;
+}
+.ws-mini {
+  border: 1px solid rgba(11, 31, 51, 0.16);
+  background: #fff;
+  color: var(--steel);
+  border-radius: 8px;
+  font: 600 0.72rem var(--font-sans);
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+}
+.ws-mini:hover {
+  border-color: var(--accent);
+  color: var(--accent-600);
+}
+
+/* ---------- AI suggestion block: confidence + reasoning, always ---------- */
+.ws-ai {
+  border-left: 3px solid var(--accent);
+  background: rgba(16, 185, 129, 0.05);
+  border-radius: 0 10px 10px 0;
+  padding: 0.55rem 0.85rem;
+  margin: 0.5rem 0;
+}
+.ws-ai.low {
+  border-left-color: #b45309;
+  background: rgba(180, 83, 9, 0.06);
+}
+.ws-ai-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.2rem;
+}
+.ws-ai-answer {
+  font-weight: 600;
+  color: var(--navy);
+  font-size: 0.93rem;
+}
+.ws-src {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--steel);
+  border: 1px solid rgba(11, 31, 51, 0.16);
+  border-radius: 5px;
+  padding: 0.02rem 0.35rem;
+}
+.ws-conf {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--steel);
+  font-variant-numeric: tabular-nums;
+}
+.ws-conf-bar {
+  display: inline-block;
+  width: 54px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(11, 31, 51, 0.12);
+  overflow: hidden;
+}
+.ws-conf-bar i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.ws-conf-bar.low i {
+  background: #b45309;
+}
+.ws-why {
+  font-size: 0.81rem;
+  color: var(--steel);
+  line-height: 1.45;
+  margin: 0;
+}
+.ws-question {
+  font-size: 0.81rem;
+  color: var(--navy);
+  margin: 0.3rem 0 0;
+}
+
+/* ---------- Categorize groups ---------- */
+.ws-group {
+  background: #fff;
+  border: 1px solid rgba(11, 31, 51, 0.08);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 0.85rem 1.1rem;
+  margin-bottom: 0.7rem;
+}
+.ws-group.is-focused {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.ws-group.is-skipped {
+  opacity: 0.45;
+}
+.ws-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.ws-group-title {
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--navy);
+}
+.ws-group-title .n {
+  font-variant-numeric: tabular-nums;
+}
+.ws-group-sum {
+  color: var(--steel);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.ws-group-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+.ws-group-actions select {
+  font: 400 0.86rem var(--font-sans);
+  border: 1px solid rgba(11, 31, 51, 0.18);
+  border-radius: 10px;
+  padding: 0.35rem 0.5rem;
+  background: #fff;
+  color: var(--navy);
+  max-width: 20rem;
+}
+.ws-cat-keys {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--steel);
+}
+.ws-txns {
+  margin-top: 0.55rem;
+}
+.ws-txns summary {
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--accent-600);
+  font-weight: 500;
+}
+.ws-txns table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin-top: 0.4rem;
+}
+.ws-txns td {
+  padding: 0.3rem 0.4rem;
+  border-bottom: 1px solid var(--mist);
+}
+.ws-txns td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Section headings between confidence bands ---------- */
+.ws-band {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1.4rem 0 0.6rem;
+}
+.ws-band h2 {
+  margin: 0;
+}
+.ws-band p {
+  margin: 0;
+  color: var(--steel);
+  font-size: 0.83rem;
+  max-width: 46ch;
+}
+
+/* ---------- Brief ---------- */
+.ws-brief-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+@media (max-width: 900px) {
+  .ws-brief-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.ws-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin-bottom: 1rem;
+}
+.ws-fact {
+  display: flex;
+  flex-direction: column;
+}
+.ws-fact .v {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--navy);
+  font-variant-numeric: tabular-nums;
+}
+.ws-fact .k {
+  font-size: 0.75rem;
+  color: var(--steel);
+}
+.ws-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ws-timeline li {
+  display: grid;
+  grid-template-columns: 8.5rem 1fr;
+  gap: 0.6rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--mist);
+  font-size: 0.86rem;
+}
+.ws-timeline li:last-child {
+  border-bottom: none;
+}
+.ws-timeline .when {
+  color: var(--steel);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Close checks ---------- */
+.ws-checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ws-check {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr);
+  gap: 0.6rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--mist);
+}
+.ws-check:last-child {
+  border-bottom: none;
+}
+.ws-check .mark {
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.5;
+}
+.ws-check.pass .mark {
+  color: var(--accent-600);
+}
+.ws-check.fail-block .mark {
+  color: var(--danger);
+}
+.ws-check.fail-warn .mark {
+  color: #b45309;
+}
+.ws-check .label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--navy);
+}
+.ws-check .detail {
+  font-size: 0.83rem;
+  color: var(--steel);
+}
+.ws-gate {
+  border-radius: 12px;
+  padding: 0.7rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.9rem;
+}
+.ws-gate.blocked {
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  color: #991b1b;
+}
+.ws-gate.clear {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #05603a;
+}
+
+.ws-narrative {
+  background: var(--paper);
+  border: 1px solid var(--mist);
+  border-radius: 12px;
+  padding: 0.9rem 1.1rem;
+  white-space: pre-wrap;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+.ws-draft-tag {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #b45309;
+  border: 1px solid rgba(180, 83, 9, 0.35);
+  border-radius: 5px;
+  padding: 0.05rem 0.4rem;
+}
+.ws-approved-tag {
+  color: var(--accent-600);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+/* ---------- Tables ---------- */
+.ws-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+.ws-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--steel);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.4rem 0.55rem;
+  border-bottom: 1px solid var(--mist);
+}
+.ws-table td {
+  padding: 0.5rem 0.55rem;
+  border-bottom: 1px solid var(--mist);
+  vertical-align: top;
+}
+.ws-table tr:last-child td {
+  border-bottom: none;
+}
+.ws-table tr.flagged td {
+  background: rgba(220, 38, 38, 0.04);
+}
+
+/* ---------- Severity chips ---------- */
+.sev-high {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--danger);
+}
+.sev-medium {
+  background: rgba(180, 83, 9, 0.12);
+  color: #b45309;
+}
+.sev-low {
+  background: var(--mist);
+  color: var(--steel);
+}
+
+/* ---------- Keyboard help ---------- */
+.ws-keyhint {
+  color: var(--steel);
+  font-size: 0.79rem;
+  margin-top: 0.6rem;
+}
+kbd {
+  display: inline-block;
+  font: 600 0.74rem ui-monospace, SFMono-Regular, Menlo, monospace;
+  border: 1px solid rgba(11, 31, 51, 0.22);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 0.02rem 0.32rem;
+  background: #fff;
+  color: var(--navy);
+}
+.ws-help {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 60;
+  width: min(320px, calc(100vw - 2.5rem));
+  background: #fff;
+  border: 1px solid rgba(11, 31, 51, 0.14);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lift);
+  padding: 0.9rem 1.05rem;
+}
+.ws-help[hidden] {
+  display: none;
+}
+.ws-help h2 {
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+.ws-help dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 3.4rem 1fr;
+  gap: 0.3rem 0.6rem;
+  font-size: 0.83rem;
+}
+.ws-help dt {
+  margin: 0;
+}
+.ws-help dd {
+  margin: 0;
+  color: var(--steel);
+}
+
+/* Screen-reader announcements for keyboard navigation. */
+.ws-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  clip: rect(0 0 0 0);
+  overflow: hidden;
+  white-space: nowrap;
+}

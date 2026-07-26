@@ -1,0 +1,91 @@
+<% layout('../layout') %>
+<%
+  const q = it.user.role === 'client' ? '' : (it.query.client ? '?client=' + it.query.client : '');
+%>
+
+<div class="m-page">
+  <div class="page-head">
+    <h1>Questions</h1>
+    <p class="sub">
+      <% if (it.open.length === 0) { %>
+        Everything we asked has been answered.
+      <% } else { %>
+        <%= it.open.length %> thing<%= it.open.length === 1 ? '' : 's' %> we'd like to get right. One tap each.
+      <% } %>
+    </p>
+  </div>
+
+  <% if (it.open.length === 0) { %>
+    <section class="m-empty-hero">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/>
+      </svg>
+      <p class="m-empty-title">Nothing needed from you right now.</p>
+      <p class="m-empty-sub">We'll ask here the moment something comes up — no email chase, no phone tag.</p>
+      <a class="btn btn-ghost" href="/m<%= q %>">Back to home</a>
+    </section>
+  <% } %>
+
+  <% it.open.forEach(function (item) { %>
+    <section class="m-question">
+      <% if (item.transactionId) { %>
+        <div class="m-question-txn">
+          <span class="m-txn-vendor"><%= item.txnCounterparty || item.txnDescription %></span>
+          <span class="m-txn-amount tabular"><%= it.fmtMoney(Math.abs(item.txnAmountCents || 0)) %></span>
+          <span class="m-txn-date"><%= it.fmtDate(item.txnPostedAt) %></span>
+        </div>
+      <% } %>
+
+      <h2 class="m-question-text"><%= item.question %></h2>
+
+      <form method="post" action="/questions/<%= item.id %>/answer<%= q %>" class="m-answer-form">
+        <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+
+        <% if (item.choices.length > 0) { %>
+          <div class="m-choices">
+            <% item.choices.forEach(function (choice) { %>
+              <button class="m-choice" type="submit" name="answer" value="<%= choice %>"><%= choice %></button>
+            <% }) %>
+          </div>
+          <details class="m-other">
+            <summary>Something else</summary>
+            <div class="m-other-body">
+              <label class="field">
+                <span class="visually-hidden">Your answer</span>
+                <input type="text" name="other" maxlength="500" placeholder="Tell us in your own words" autocomplete="off">
+              </label>
+              <button class="btn btn-primary" type="submit">Send answer</button>
+            </div>
+          </details>
+        <% } else { %>
+          <div class="m-other-body">
+            <label class="field">
+              <span class="visually-hidden">Your answer</span>
+              <input type="text" name="answer" maxlength="500" placeholder="Type your answer" autocomplete="off" required>
+            </label>
+            <button class="btn btn-primary btn-block" type="submit">Send answer</button>
+          </div>
+        <% } %>
+      </form>
+
+      <p class="m-question-asked muted small">Asked <%= it.fmtDate(item.createdAt) %></p>
+    </section>
+  <% }) %>
+
+  <% if (it.answered.length > 0) { %>
+    <section class="m-card">
+      <div class="m-card-head"><h2>Recently answered</h2></div>
+      <ul class="m-answered">
+        <% it.answered.forEach(function (a) { %>
+          <li>
+            <p class="m-answered-q"><%= a.question %></p>
+            <p class="m-answered-a">
+              <span class="chip chip-you"><%= a.answer %></span>
+              <span class="muted small"><%= it.fmtDate(a.answeredAt) %> · via <%= a.answeredVia %></span>
+            </p>
+          </li>
+        <% }) %>
+      </ul>
+    </section>
+  <% } %>
+</div>
